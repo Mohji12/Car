@@ -27,7 +27,7 @@ const whatsAppUrl = (vehicles: Vehicle[]) => {
 
 function Logo({ full = false }: { full?: boolean }) {
   if (full) return <img className="footer-logo" src="/carwebs-motors-logo.jpeg" alt="CarWebs Motors Ltd official logo" data-testid="img-official-logo" />;
-  return <div className="monogram" aria-label="CarWebs monogram" data-testid="logo-monogram">CW</div>;
+  return <img className="header-logo" src="/carwebs-motors-logo-lockup.png" alt="CarWebs Motors Ltd" data-testid="img-header-logo" />;
 }
 
 function Shell({ children, savedCount }: { children: ReactNode; savedCount: number }) {
@@ -40,7 +40,7 @@ function Shell({ children, savedCount }: { children: ReactNode; savedCount: numb
   ];
   return <div className="app-shell">
     <header className={`topbar ${isHome ? 'home-topbar' : ''}`}>
-      <Link href="/" className="brand-link" data-testid="link-brand"><Logo /><div className="brand-wordmark">CARWEBS <span>MOTORS</span></div></Link>
+      <Link href="/" className="brand-link" data-testid="link-brand"><Logo /></Link>
       <nav className="desktop-nav" aria-label="Main navigation">
         <Link href="/" className={location === '/' ? 'active' : ''} data-testid="link-nav-home">Showroom</Link>
         <Link href="/inventory" className={location.startsWith('/inventory') ? 'active' : ''} data-testid="link-nav-inventory">Available stock</Link>
