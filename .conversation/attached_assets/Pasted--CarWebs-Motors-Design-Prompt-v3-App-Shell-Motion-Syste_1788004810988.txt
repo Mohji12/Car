@@ -1,0 +1,131 @@
+# CarWebs Motors — Design Prompt v3 (App-Shell / Motion System)
+
+## 0. What's new vs v2
+
+- **Reconciled with the real logo** (orange→blue gradient car mark). We're not designing a palette in a
+  vacuum anymore — amber/cobalt already approximate the brand's orange/blue, so we keep those tokens and
+  simplify how the mark itself is *used*, rather than inventing a new one.
+- **Upgraded from "responsive website" to "app shell."** Mobile-first now means the site is structured and
+  moves like a native app (bottom tab bar, shared-element transitions, gesture navigation), with desktop
+  as an expanded view of the same shell — not two designs stitched together.
+- **Named motion system** with real easing/duration values, so "advanced flow motion animations" is
+  specified precisely enough to build consistently rather than left to vibes.
+
+---
+
+## 1. Brand Reconciliation
+
+The current logo — gradient car silhouette + "CARWEBS Motors Ltd" wordmark — is too detailed to work at
+nav-bar or app-icon size, and its warm-to-cool gradient will fight a busy background. Recommendation:
+
+- **Primary lockup (nav, footer, app icon):** the `CW` monogram only, set in a single flat color
+  (ignition-amber on graphite, or graphite on ivory) inside a hard-cornered square — no gradient, no car
+  silhouette. This is what appears at every small size.
+- **Full logo (with car silhouette + full wordmark):** reserved for the site footer at larger size,
+  the About page, and print/business materials — anywhere it has room to breathe.
+- **Token mapping to existing brand:**
+  - Logo orange → `ignition` `#E8A33D` (deepened slightly from the logo's brighter orange so it reads as
+    premium rather than dealership-flyer orange)
+  - Logo blue → `cobalt` `#2A4FD6`
+  - Everything else (graphite/ivory/chrome/signal) as in v2 — these are neutral scaffolding, not brand
+    colors, so they don't need to match the logo.
+
+This keeps the rebuild recognizably *CarWebs* rather than a generic dark-automotive template with no tie
+to the client's actual identity — the previous two drafts didn't reference the real logo at all.
+
+---
+
+## 2. App Shell Structure (mobile, scales up to desktop)
+
+**Mobile (primary target):**
+- **Top bar**: monogram + page title only, transparent-over-hero on Home, solid graphite elsewhere. No
+  full nav links cluttering the top — navigation lives in the bottom tab bar.
+- **Bottom tab bar** (fixed, safe-area aware): `Home · Inventory · Saved · WhatsApp`. WhatsApp tab is
+  visually distinct (green icon, not amber) since it's an exit-to-external-app action, not a section.
+  Active tab gets an amber underline dot, not a full pill-fill (quieter, more native-feeling).
+- **Saved** is new: a lightweight local "shortlist" (heart icon on cards) so a visitor can tap through 4–5
+  cars, compare later, then hit WhatsApp with "I'm interested in these 3" — turns passive browsing into an
+  intentional shortlist rather than a one-shot enquiry.
+
+**Desktop:** bottom tab bar becomes a conventional top nav; everything else (shell content, motion system,
+components) is identical — same components, same transitions, just more horizontal room. Don't design
+desktop as a separate layout tree.
+
+---
+
+## 3. Motion System (named, with real values)
+
+| Name | Used for | Duration | Easing |
+|---|---|---|---|
+| **Ignition Sweep** | Gallery photo transitions (per v2 §2) | 450ms | `cubic-bezier(.22,.61,.36,1)` (fast-out, gentle settle) |
+| **Shell Morph** | Card → Detail page shared-element transition (§4) | 380ms | `cubic-bezier(.32,.72,0,1)` |
+| **Tap Response** | Buttons, tabs, filter chips | 120ms | `ease-out`, scale 0.97 on press, spring back |
+| **Sheet Slide** | Filter bottom sheet, saved-list drawer | 300ms | `cubic-bezier(.16,1,.3,1)` (overshoot-free, decisive) |
+| **Reveal** | Cards/sections entering viewport | 400ms | `ease-out`, 12px rise + fade, 60ms stagger |
+
+Five named motions, each doing one job. Nothing outside this table gets custom animation — that
+constraint is what keeps "advanced motion" from turning into "animation on everything," which is what
+actually reads as amateur, not professional.
+
+---
+
+## 4. Shell Morph — Card to Detail Transition
+
+This is the single highest-leverage motion in the app: tapping a vehicle card doesn't navigate to a new
+page, it **morphs**. The card's photo, price, and title literally expand and reposition into the detail
+page's hero — same DOM elements animating in place (FLIP technique / `view-transition-name` in modern
+CSS), not a cut to a new screen.
+
+- Tap → card's rounded frame straightens to full-bleed, photo scales up to fill viewport width, price/title
+  slide into their detail-page positions, background content fades in around them (~380ms total).
+- Back gesture (swipe-from-edge on mobile, back button on desktop) reverses the exact same morph — the
+  detail page collapses back into its card in the grid, scrolled to the right position automatically.
+- This single interaction is what will make the site feel like a built app rather than a stack of pages —
+  worth the engineering effort over everything else on this list.
+- Fallback for browsers/devices without View Transitions support: fast crossfade (200ms), no morph — never
+  a jarring hard cut.
+
+---
+
+## 5. Gesture Interactions
+
+- **Inventory grid → swipe-to-shortlist**: on mobile, a small swipe-right on a card heart-icons it into
+  Saved without opening the card (like a lightweight version of a dating-app swipe, but additive not
+  destructive — swipe-left does nothing, there's no "reject" gesture, just an optional fast-save).
+- **Filter sheet**: swipe-down to dismiss, standard bottom-sheet physics (rubber-band resistance at the
+  top, snaps closed past a velocity/distance threshold).
+- **Pull-to-refresh** on Inventory: reveals a small monospace "Checking for new stock…" — ties back to the
+  spec-sheet visual language instead of a generic spinner.
+- **Gallery swipe** (per v2 §2) remains manual-override on the auto-cycling photos.
+
+---
+
+## 6. Page-by-Page (updated for shell)
+
+- **Home**: hero (gallery-driven, per v2) → build-sheet strip → featured vehicles (Shell Morph on tap) →
+  Why CarWebs (two-column list, per v2) → awards row → footer with full logo.
+- **Inventory**: filter bottom-sheet (mobile) / rail (desktop) per v2 §5, pull-to-refresh, swipe-to-save,
+  Shell Morph into detail.
+- **Detail**: full-bleed gallery hero (this is where the morphed card lands), monospace spec sheet,
+  WhatsApp sticky CTA, "Similar cars" strip at the bottom using the same card component.
+- **Saved**: new screen, simple list of shortlisted cars, single "Enquire about these" WhatsApp CTA that
+  bundles all saved refs into one pre-filled message.
+
+---
+
+## 7. Admin Portal
+
+Unchanged in spirit from v2 (plain, dense, utility-first) but now shares the monogram lockup and token
+set properly aligned to the real brand, and the Available/Sold toggle shows a live thumbnail using the
+same card component the public shell uses — what the admin sees is exactly what ends up in the app shell,
+morph animation and all, so there's no surprise between what's toggled and what's shown.
+
+---
+
+## 8. Performance & Fallbacks
+
+- All shared-element/morph work must degrade to a plain fast crossfade on low-end devices or when
+  `prefers-reduced-motion` is set — never block interaction waiting on an animation.
+- Gallery auto-cycling pauses off-screen and on `prefers-reduced-motion` (per v2).
+- Motion system table in §3 is the full animation budget for the entire app — resist adding a sixth
+  "just for this one section" animation; if something needs motion, it should map to one of these five.

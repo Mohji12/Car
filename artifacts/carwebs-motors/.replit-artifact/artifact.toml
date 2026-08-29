@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "CarWebs Motors"
+description = "A premium used-car showroom app for browsing curated stock, saving favourites, inspecting vehicle details, and sending a bundled WhatsApp enquiry to CarWebs Motors Ltd."
+version = "1.0.0"
+id = "artifacts/carwebs-motors"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19801
+
+[services.development]
+run = "pnpm --filter @workspace/carwebs-motors run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/carwebs-motors", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/carwebs-motors/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19801"
+BASE_PATH = "/"

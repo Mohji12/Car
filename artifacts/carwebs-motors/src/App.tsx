@@ -1,0 +1,155 @@
+import { type ReactNode, type TouchEvent as ReactTouchEvent, useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, ArrowRight, Check, ChevronRight, CircleHelp, Eye, Heart, Home, LayoutGrid, MessageCircle, Pencil, RefreshCw, Search, ShieldCheck, SlidersHorizontal, X } from 'lucide-react';
+import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
+
+type Vehicle = {
+  id: string; make: string; model: string; variant: string; year: number; price: number; mileage: number;
+  fuel: string; transmission: string; bodyType: string; colour: string; location: string; status: 'Available' | 'Sold';
+  featured: boolean; description: string; highlights: string[]; specs: { label: string; value: string }[]; images: string[]; addedAt: string;
+};
+
+const image = (id: number, width = 1200) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${width}`;
+const initialVehicles: Vehicle[] = [
+  { id: 'cw-2401', make: 'BMW', model: 'M4', variant: 'Competition xDrive', year: 2022, price: 52990, mileage: 12400, fuel: 'Petrol', transmission: 'Automatic', bodyType: 'Coupe', colour: 'Isle of Man Green', location: 'Derby', status: 'Available', featured: true, description: 'A properly specified M4 with the composure to cross the country and the intent to make every clear road count. Presented with a complete history and prepared in-house.', highlights: ['M Sport Pro pack', 'Carbon fibre trim', 'Harman Kardon audio', '360° camera'], specs: [{ label: 'Engine', value: '3.0 litre twin-turbo' }, { label: 'Power', value: '503 bhp' }, { label: '0–62 mph', value: '3.5 seconds' }, { label: 'CO₂', value: '227 g/km' }], images: [image(170811), image(116675), image(112460)], addedAt: '2024-05-14' },
+  { id: 'cw-2398', make: 'Porsche', model: 'Macan', variant: 'GTS', year: 2021, price: 47950, mileage: 23800, fuel: 'Petrol', transmission: 'Automatic', bodyType: 'SUV', colour: 'Crayon', location: 'Derby', status: 'Available', featured: true, description: 'The GTS is the Macan at its most convincing: quiet, quick and beautifully balanced. A refined everyday performance car with a considered specification.', highlights: ['Panoramic roof', 'Sports exhaust', 'Porsche Entry', 'Adaptive cruise'], specs: [{ label: 'Engine', value: '2.9 litre V6' }, { label: 'Power', value: '434 bhp' }, { label: '0–62 mph', value: '4.5 seconds' }, { label: 'Service history', value: 'Full Porsche' }], images: [image(244206), image(170811), image(305070)], addedAt: '2024-05-10' },
+  { id: 'cw-2387', make: 'Mercedes-Benz', model: 'C-Class', variant: 'C300 AMG Line Premium', year: 2022, price: 31990, mileage: 18900, fuel: 'Hybrid', transmission: 'Automatic', bodyType: 'Saloon', colour: 'Obsidian Black', location: 'Nottingham', status: 'Available', featured: true, description: 'A sharp, quiet and remarkably efficient C-Class with the right premium details. Its hybrid powertrain makes long journeys effortless.', highlights: ['Burmester audio', 'Night package', 'Heated seats', 'MBUX navigation'], specs: [{ label: 'Engine', value: '2.0 litre mild hybrid' }, { label: 'Power', value: '255 bhp' }, { label: 'Drive', value: 'Rear wheel drive' }, { label: 'Owners', value: '1' }], images: [image(112460), image(305070), image(244206)], addedAt: '2024-05-03' },
+  { id: 'cw-2379', make: 'Audi', model: 'RS 5', variant: 'Sportback Vorsprung', year: 2020, price: 42990, mileage: 28700, fuel: 'Petrol', transmission: 'Automatic', bodyType: 'Hatchback', colour: 'Nardo Grey', location: 'Leicester', status: 'Available', featured: false, description: 'Understated shape, serious pace. The RS 5 Sportback has the practicality of a hatch and the soundtrack of something far less sensible.', highlights: ['RS sports exhaust', 'Matrix LED lights', 'Bang & Olufsen', 'Quattro'], specs: [{ label: 'Engine', value: '2.9 litre V6' }, { label: 'Power', value: '444 bhp' }, { label: '0–62 mph', value: '3.9 seconds' }, { label: 'MOT until', value: 'February 2025' }], images: [image(261985), image(170811), image(112460)], addedAt: '2024-04-28' },
+  { id: 'cw-2368', make: 'Land Rover', model: 'Defender 110', variant: 'D250 X-Dynamic HSE', year: 2022, price: 55990, mileage: 21600, fuel: 'Diesel', transmission: 'Automatic', bodyType: '4x4', colour: 'Pangea Green', location: 'Derby', status: 'Available', featured: false, description: 'A capable, comfortable Defender with the long-wheelbase presence and equipment to make weekends feel longer.', highlights: ['7 seats', 'Sliding panoramic roof', 'Meridian audio', 'All terrain tyres'], specs: [{ label: 'Engine', value: '3.0 litre diesel' }, { label: 'Power', value: '247 bhp' }, { label: 'Towing', value: '3,500 kg' }, { label: 'Warranty', value: '12 months' }], images: [image(305070), image(244206), image(261985)], addedAt: '2024-04-18' },
+  { id: 'cw-2354', make: 'Volvo', model: 'XC60', variant: 'B5 R-Design Pro', year: 2021, price: 34750, mileage: 30100, fuel: 'Hybrid', transmission: 'Automatic', bodyType: 'SUV', colour: 'Crystal White', location: 'Nottingham', status: 'Sold', featured: false, description: 'Calm, confident and wonderfully ergonomic. A Volvo XC60 with understated style and all the thoughtful details.', highlights: ['Pilot Assist', 'Harman Kardon', 'Heated steering wheel', '360° camera'], specs: [{ label: 'Engine', value: '2.0 litre mild hybrid' }, { label: 'Power', value: '247 bhp' }, { label: 'Owners', value: '1' }, { label: 'Warranty', value: 'Sold' }], images: [image(112460), image(305070), image(170811)], addedAt: '2024-04-05' },
+];
+
+const formatPrice = (price: number) => `£${price.toLocaleString('en-GB')}`;
+const formatMileage = (mileage: number) => `${mileage.toLocaleString('en-GB')} miles`;
+const whatsAppUrl = (vehicles: Vehicle[]) => {
+  const refs = vehicles.map((v) => `${v.make} ${v.model} (${v.id.toUpperCase()})`).join(', ');
+  return `https://wa.me/447700900123?text=${encodeURIComponent(`Hello CarWebs Motors, I'm interested in ${refs}. Could you share availability and next steps?`)}`;
+};
+
+function Logo({ full = false }: { full?: boolean }) {
+  if (full) return <img className="footer-logo" src="/carwebs-motors-logo.jpeg" alt="CarWebs Motors Ltd official logo" data-testid="img-official-logo" />;
+  return <div className="monogram" aria-label="CarWebs monogram" data-testid="logo-monogram">CW</div>;
+}
+
+function Shell({ children, savedCount }: { children: ReactNode; savedCount: number }) {
+  const [location] = useLocation();
+  const isHome = location === '/';
+  const tabs = [
+    { href: '/', label: 'Home', icon: Home },
+    { href: '/inventory', label: 'Inventory', icon: LayoutGrid },
+    { href: '/saved', label: `Saved${savedCount ? ` (${savedCount})` : ''}`, icon: Heart },
+  ];
+  return <div className="app-shell">
+    <header className={`topbar ${isHome ? 'home-topbar' : ''}`}>
+      <Link href="/" className="brand-link" data-testid="link-brand"><Logo /><div className="brand-wordmark">CARWEBS <span>MOTORS</span></div></Link>
+      <nav className="desktop-nav" aria-label="Main navigation">
+        <Link href="/" className={location === '/' ? 'active' : ''} data-testid="link-nav-home">Showroom</Link>
+        <Link href="/inventory" className={location.startsWith('/inventory') ? 'active' : ''} data-testid="link-nav-inventory">Available stock</Link>
+        <Link href="/saved" className={location === '/saved' ? 'active' : ''} data-testid="link-nav-saved">Shortlist {savedCount > 0 && `(${savedCount})`}</Link>
+        <a className="whatsapp-mini" href="https://wa.me/447700900123" target="_blank" rel="noreferrer" data-testid="link-nav-whatsapp"><MessageCircle size={15} /> WhatsApp</a>
+        <Link href="/admin" className="admin-link" data-testid="link-nav-admin">Stock desk</Link>
+      </nav>
+    </header>
+    <main>{children}</main>
+    <nav className="bottom-tabs" aria-label="Mobile navigation">
+      {tabs.map(({ href, label, icon: Icon }) => <Link href={href} className={`bottom-tab ${location === href || (href === '/inventory' && location.startsWith('/inventory')) ? 'active' : ''}`} key={href} data-testid={`link-mobile-${label.toLowerCase().replace(/[^a-z]+/g, '-')}`}><Icon strokeWidth={1.8} /><span>{label}</span></Link>)}
+      <a href="https://wa.me/447700900123" target="_blank" rel="noreferrer" className="bottom-tab whatsapp" data-testid="link-mobile-whatsapp"><MessageCircle strokeWidth={1.8} /><span>WhatsApp</span></a>
+    </nav>
+  </div>;
+}
+
+function VehicleCard({ vehicle, saved, onToggleSaved, compact = false }: { vehicle: Vehicle; saved: boolean; onToggleSaved: (id: string) => void; compact?: boolean }) {
+  const [offset, setOffset] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [swiped, setSwiped] = useState(false);
+  const handleTouchStart = (event: ReactTouchEvent<HTMLElement>) => setTouchStart(event.touches[0].clientX);
+  const handleTouchMove = (event: ReactTouchEvent<HTMLElement>) => {
+    if (touchStart !== null) setOffset(Math.max(0, Math.min(72, event.touches[0].clientX - touchStart)));
+  };
+  const handleTouchEnd = () => {
+    if (offset > 50) { onToggleSaved(vehicle.id); setSwiped(true); }
+    setOffset(0); setTouchStart(null);
+    window.setTimeout(() => setSwiped(false), 250);
+  };
+  return <article className={`vehicle-card ${compact ? 'compact-card' : ''}`} style={{ transform: offset ? `translateX(${offset}px)` : undefined }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} data-testid={`card-vehicle-${vehicle.id}`}>
+    <Link href={`/inventory/${vehicle.id}`} onClick={(event) => { if (swiped) event.preventDefault(); }} data-testid={`link-vehicle-${vehicle.id}`}>
+      <div className="vehicle-image">
+        <img src={vehicle.images[0]} alt={`${vehicle.make} ${vehicle.model} ${vehicle.variant}`} loading="lazy" data-testid={`img-vehicle-${vehicle.id}`} />
+        {vehicle.featured && <div className="vehicle-badge">Selected stock</div>}
+        <button className={`save-button ${saved ? 'saved' : ''}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onToggleSaved(vehicle.id); }} aria-label={saved ? `Remove ${vehicle.make} ${vehicle.model} from saved` : `Save ${vehicle.make} ${vehicle.model}`} data-testid={`button-save-${vehicle.id}`}><Heart size={17} fill={saved ? 'currentColor' : 'none'} /></button>
+      </div>
+      <div className="vehicle-body">
+        <h3>{vehicle.make} <span>{vehicle.model}</span></h3>
+        <div className="vehicle-meta"><span>{vehicle.year}</span><span>{formatMileage(vehicle.mileage)}</span><span>{vehicle.transmission}</span></div>
+        <div className="vehicle-price"><strong>{formatPrice(vehicle.price)}</strong><small>{vehicle.location}</small></div>
+      </div>
+    </Link>
+  </article>;
+}
+
+function Footer() {
+  return <footer className="footer"><div className="footer-inner"><div><Logo full /><p>Carefully selected cars, prepared properly, and presented without the usual showroom noise.</p></div><div className="footer-links"><div><b>Visit</b><span>Derby showroom</span><span>Mon–Sat · 08:30–18:00</span></div><div><b>Talk to us</b><span>07700 900 123</span><span>hello@carwebs.co.uk</span></div></div></div><div className="footer-bottom"><span>CARWEBS MOTORS LTD · EST. 2012</span><span>VEHICLE REF. CW / UK</span></div></footer>;
+}
+
+function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void }) {
+  const featured = vehicles.filter((vehicle) => vehicle.status === 'Available' && vehicle.featured).slice(0, 3);
+  return <><section className="hero"><div className="hero-copy"><div className="eyebrow">Independent stock / Derby, UK</div><h1>Find the car<br />you <em>keep</em><br />thinking about.</h1><p>Curated performance, premium and everyday cars. Every vehicle inspected, photographed and priced with a straight answer.</p><div className="hero-actions"><Link href="/inventory" className="button button-primary" data-testid="link-hero-inventory">Browse available stock <ArrowRight size={16} /></Link><a href="https://wa.me/447700900123" target="_blank" rel="noreferrer" className="button button-dark" data-testid="link-hero-whatsapp"><MessageCircle size={16} /> Talk to a specialist</a></div><div className="hero-note"><strong>01</strong><span>New arrivals checked<br />every weekday</span></div></div><div className="hero-visual"><img src={image(170811, 1500)} alt="Black performance car on a quiet road" /><div className="hero-plate"><small>JUST LANDED / CW-2401</small><b>BMW M4 Competition</b><span>£52,990 · 12,400 miles</span></div></div></section><section className="build-strip"><div><b>The CarWebs standard</b><span>Details that add up</span></div><div><b>12 mo</b><span>Warranty included</span></div><div><b>HPI</b><span>Clear & verified</span></div><div><b>7 day</b><span>Exchange promise</span></div></section><section className="home-section"><div className="section-head"><div><div className="eyebrow">The short list</div><h2>Worth a closer look.</h2></div><Link href="/inventory" className="section-link" data-testid="link-featured-view-all">View all available stock <ArrowRight size={14} /></Link></div><div className="featured-grid">{featured.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} saved={savedIds.includes(vehicle.id)} onToggleSaved={onToggleSaved} />)}</div></section><section className="home-section" style={{ paddingTop: 28 }}><div className="why-grid"><div className="why-intro"><div className="eyebrow">Why CarWebs</div><h2>Less forecourt.<br />More confidence.</h2><p>We think buying a used car should feel like making a good decision, not surviving a sales process.</p></div><div className="reasons"><div className="reason"><div className="reason-number">01</div><div><h3>A small, serious selection</h3><p>We choose fewer cars and spend more time on each one. If it is on the site, it has earned its place.</p></div><ChevronRight size={18} /></div><div className="reason"><div className="reason-number">02</div><div><h3>Numbers you can trust</h3><p>Clear pricing, verified history and a condition report you can actually understand before you visit.</p></div><ChevronRight size={18} /></div><div className="reason"><div className="reason-number">03</div><div><h3>People, not pressure</h3><p>Tell us what matters to you. We will make a useful recommendation, even if the answer is not one of our cars.</p></div><ChevronRight size={18} /></div></div></div></section><div className="awards"><div className="award"><div className="award-mark">AA</div><div><b>Dealer promise</b><span>Independent review checked</span></div></div><div className="award"><div className="award-mark">12</div><div><b>Years in the trade</b><span>Local, established, accountable</span></div></div><div className="award"><div className="award-mark"><ShieldCheck size={15} /></div><div><b>Prepared properly</b><span>Every car gets our standard</span></div></div></div><Footer /></>;
+}
+
+function InventoryPage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void }) {
+  const [query, setQuery] = useState('');
+  const [make, setMake] = useState('All makes');
+  const [body, setBody] = useState('All body types');
+  const [fuel, setFuel] = useState('All fuel types');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  useEffect(() => { const timer = window.setTimeout(() => setLoading(false), 360); return () => window.clearTimeout(timer); }, []);
+  const filtered = useMemo(() => vehicles.filter((vehicle) => vehicle.status === 'Available' && (!query || `${vehicle.make} ${vehicle.model} ${vehicle.variant}`.toLowerCase().includes(query.toLowerCase())) && (make === 'All makes' || vehicle.make === make) && (body === 'All body types' || vehicle.bodyType === body) && (fuel === 'All fuel types' || vehicle.fuel === fuel)), [vehicles, query, make, body, fuel]);
+  const refresh = () => { setRefreshing(true); window.setTimeout(() => setRefreshing(false), 900); };
+  const clearFilters = () => { setQuery(''); setMake('All makes'); setBody('All body types'); setFuel('All fuel types'); };
+  const makes = ['All makes', ...Array.from(new Set(vehicles.map((v) => v.make)))];
+  const bodies = ['All body types', ...Array.from(new Set(vehicles.map((v) => v.bodyType)))];
+  const fuels = ['All fuel types', ...Array.from(new Set(vehicles.map((v) => v.fuel)))];
+  return <><section className="inventory-header"><div className="inventory-header-inner"><div><div className="eyebrow" style={{ color: '#e8a33d' }}>The showroom floor</div><h1>Available stock.</h1></div><p>A considered selection of premium, performance and beautifully useful cars. New arrivals appear here first.</p></div></section><div className="inventory-tools"><label className="search-box"><Search size={17} color="#69717b" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search make, model or variant" aria-label="Search stock" data-testid="input-inventory-search" /></label><button className={`filter-chip ${filtersOpen || make !== 'All makes' || body !== 'All body types' || fuel !== 'All fuel types' ? 'active' : ''}`} onClick={() => setFiltersOpen((open) => !open)} data-testid="button-open-filters"><SlidersHorizontal size={15} /> Filters <span>({[make !== 'All makes', body !== 'All body types', fuel !== 'All fuel types'].filter(Boolean).length})</span></button><button className="filter-chip" onClick={refresh} disabled={refreshing} data-testid="button-refresh-stock"><RefreshCw size={14} className={refreshing ? 'spin' : ''} /> Refresh</button><span className="stock-count" data-testid="text-stock-count">{filtered.length} vehicles shown</span></div>{filtersOpen && <div className="filter-panel"><div className="select-field"><label htmlFor="make-filter">Make</label><select id="make-filter" value={make} onChange={(event) => setMake(event.target.value)} data-testid="select-filter-make">{makes.map((option) => <option key={option}>{option}</option>)}</select></div><div className="select-field"><label htmlFor="body-filter">Body type</label><select id="body-filter" value={body} onChange={(event) => setBody(event.target.value)} data-testid="select-filter-body">{bodies.map((option) => <option key={option}>{option}</option>)}</select></div><div className="select-field"><label htmlFor="fuel-filter">Fuel</label><select id="fuel-filter" value={fuel} onChange={(event) => setFuel(event.target.value)} data-testid="select-filter-fuel">{fuels.map((option) => <option key={option}>{option}</option>)}</select></div><button className="button button-outline" onClick={clearFilters} data-testid="button-clear-filters"><X size={14} /> Clear all</button></div>}<div className="inventory-content"><div className="refresh-note" aria-live="polite">{refreshing && <><RefreshCw size={13} /> Checking for new stock…</>}</div>{loading ? <div className="inventory-grid" aria-label="Loading inventory">{[1, 2, 3, 4, 5, 6].map((item) => <div className="vehicle-card" key={item}><div className="vehicle-image skeleton" /><div className="vehicle-body"><div className="skeleton" style={{ height: 21, width: '62%' }} /><div className="skeleton" style={{ height: 11, width: '48%', marginTop: 13 }} /><div className="skeleton" style={{ height: 24, width: '38%', marginTop: 21 }} /></div></div>)}</div> : <div className="inventory-grid">{filtered.length ? filtered.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} saved={savedIds.includes(vehicle.id)} onToggleSaved={onToggleSaved} />) : <div className="empty-state" data-testid="empty-inventory"><CircleHelp size={29} /><h3>Nothing matching that brief.</h3><p>Try clearing a filter or searching for another make.</p><button className="button button-outline" onClick={clearFilters} data-testid="button-empty-clear">Reset the search</button></div>}</div>}<p className="eyebrow" style={{ marginTop: 30 }}>Swipe right on a car to save it · tap to view the full build sheet</p></div></>;
+}
+
+function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void }) {
+  const { id } = useParams<{ id: string }>();
+  const vehicle = vehicles.find((item) => item.id === id);
+  const [photo, setPhoto] = useState(0);
+  if (!vehicle) return <div className="page"><div className="empty-state"><CircleHelp size={29} /><h3>That vehicle has moved on.</h3><p>The stock record may have just been updated.</p><Link className="button button-primary" href="/inventory" data-testid="link-detail-back-inventory">Back to available stock</Link></div></div>;
+  const nextPhoto = (direction: number) => setPhoto((current) => (current + direction + vehicle.images.length) % vehicle.images.length);
+  const similar = vehicles.filter((item) => item.status === 'Available' && item.id !== vehicle.id && (item.bodyType === vehicle.bodyType || item.make === vehicle.make)).slice(0, 3);
+  return <div className="detail-page"><Link href="/inventory" className="back-link" data-testid="link-detail-back"><ArrowLeft size={15} /> Back to available stock</Link><section className="detail-hero"><div className="gallery"><img key={vehicle.images[photo]} src={vehicle.images[photo]} alt={`${vehicle.make} ${vehicle.model}, view ${photo + 1}`} data-testid="img-detail-gallery" /><div className="gallery-controls"><button onClick={() => nextPhoto(-1)} aria-label="Previous image" data-testid="button-gallery-previous"><ArrowLeft size={16} /></button><button onClick={() => nextPhoto(1)} aria-label="Next image" data-testid="button-gallery-next"><ArrowRight size={16} /></button></div><div className="gallery-dots">{vehicle.images.map((_, index) => <i className={index === photo ? 'active' : ''} key={index} />)}</div></div><div className="detail-summary"><div className="eyebrow">{vehicle.id.toUpperCase()} / {vehicle.status}</div><h1>{vehicle.make}<span>{vehicle.model}</span></h1><div className="detail-price">{formatPrice(vehicle.price)}</div><p>{vehicle.variant} · {vehicle.year} · {formatMileage(vehicle.mileage)}</p><a className="button button-whatsapp" href={whatsAppUrl([vehicle])} target="_blank" rel="noreferrer" data-testid="link-detail-whatsapp"><MessageCircle size={16} /> Enquire about this car</a><button className={`button ${savedIds.includes(vehicle.id) ? 'button-primary' : 'button-dark'}`} onClick={() => onToggleSaved(vehicle.id)} data-testid="button-detail-save"><Heart size={16} fill={savedIds.includes(vehicle.id) ? 'currentColor' : 'none'} /> {savedIds.includes(vehicle.id) ? 'Saved to shortlist' : 'Save to shortlist'}</button></div></section><section className="spec-layout"><div><div className="eyebrow">The detail</div><h2>Good cars deserve<br />the full picture.</h2><p className="description">{vehicle.description}</p><div className="highlights">{vehicle.highlights.map((highlight) => <span className="highlight" key={highlight}><Check size={12} style={{ verticalAlign: '-2px', marginRight: 5 }} />{highlight}</span>)}</div></div><div><div className="eyebrow">Build sheet</div><h2>At a glance.</h2><div className="spec-table">{[{ label: 'Make / model', value: `${vehicle.make} ${vehicle.model}` }, { label: 'Variant', value: vehicle.variant }, { label: 'Colour', value: vehicle.colour }, { label: 'Fuel / gearbox', value: `${vehicle.fuel} · ${vehicle.transmission}` }, { label: 'Location', value: vehicle.location }, ...vehicle.specs].map((spec) => <div className="spec-row" key={spec.label}><span>{spec.label}</span><b>{spec.value}</b></div>)}</div></div></section>{similar.length > 0 && <section className="similar-section"><div className="section-head"><div><div className="eyebrow">Keep looking</div><h2>Similar in the showroom.</h2></div><Link className="section-link" href="/inventory" data-testid="link-detail-similar-all">See all stock <ArrowRight size={14} /></Link></div><div className="inventory-grid similar-grid">{similar.map((item) => <VehicleCard key={item.id} vehicle={item} saved={savedIds.includes(item.id)} onToggleSaved={onToggleSaved} />)}</div></section>}</div>;
+}
+
+function SavedPage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void }) {
+  const saved = vehicles.filter((vehicle) => savedIds.includes(vehicle.id));
+  return <><section className="saved-header"><div className="saved-header-inner"><div><div className="eyebrow">Your considered options</div><h1>Shortlist.</h1></div><p>Keep a few cars close while you decide what deserves a visit.</p></div></section><div className="saved-content">{saved.length > 0 ? <><div className="saved-cta"><p><b>{saved.length} {saved.length === 1 ? 'car' : 'cars'} saved.</b><span>Send the whole shortlist to our team in one message.</span></p><a className="button button-whatsapp button-small" href={whatsAppUrl(saved)} target="_blank" rel="noreferrer" data-testid="link-saved-whatsapp"><MessageCircle size={15} /> Enquire about these cars</a></div><div className="saved-list">{saved.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} saved onToggleSaved={onToggleSaved} />)}</div></> : <div className="empty-state" data-testid="empty-saved"><Heart size={29} /><h3>Your shortlist is waiting.</h3><p>Tap the heart on any car that catches your eye. It will stay here on this device.</p><Link href="/inventory" className="button button-primary" data-testid="link-empty-saved-inventory">Browse the showroom</Link></div>}</div></>;
+}
+
+function AdminPage({ vehicles, onUpdateVehicle }: { vehicles: Vehicle[]; onUpdateVehicle: (id: string, patch: Partial<Vehicle>) => void }) {
+  const [status, setStatus] = useState<'Available' | 'Sold'>('Available');
+  const listed = vehicles.filter((vehicle) => vehicle.status === status);
+  return <div className="admin-page"><div className="admin-top"><div><div className="eyebrow">Internal / stock desk</div><h1>Stock overview.</h1></div><p>Private view · edits save locally and reflect in the showroom immediately.</p></div><div className="admin-tabs"><button className={status === 'Available' ? 'active' : ''} onClick={() => setStatus('Available')} data-testid="button-admin-available">Available ({vehicles.filter((v) => v.status === 'Available').length})</button><button className={status === 'Sold' ? 'active' : ''} onClick={() => setStatus('Sold')} data-testid="button-admin-sold">Sold ({vehicles.filter((v) => v.status === 'Sold').length})</button></div><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Preview</th><th>Vehicle</th><th>Price</th><th>Mileage</th><th>Location</th><th>Status</th><th>Open</th></tr></thead><tbody>{listed.map((vehicle) => <tr key={vehicle.id}><td><img className="admin-thumb" src={vehicle.images[0]} alt="" /></td><td><input className="admin-input" value={`${vehicle.make} ${vehicle.model}`} onChange={(event) => { const [nextMake, ...rest] = event.target.value.split(' '); onUpdateVehicle(vehicle.id, { make: nextMake, model: rest.join(' ') }); }} aria-label={`Edit vehicle name ${vehicle.id}`} data-testid={`input-admin-name-${vehicle.id}`} /><div className="eyebrow">{vehicle.id}</div></td><td><input className="admin-input" value={vehicle.price} type="number" onChange={(event) => onUpdateVehicle(vehicle.id, { price: Number(event.target.value) })} aria-label={`Edit price ${vehicle.id}`} data-testid={`input-admin-price-${vehicle.id}`} /></td><td><input className="admin-input" value={vehicle.mileage} type="number" onChange={(event) => onUpdateVehicle(vehicle.id, { mileage: Number(event.target.value) })} aria-label={`Edit mileage ${vehicle.id}`} data-testid={`input-admin-mileage-${vehicle.id}`} /></td><td><input className="admin-input" value={vehicle.location} onChange={(event) => onUpdateVehicle(vehicle.id, { location: event.target.value })} aria-label={`Edit location ${vehicle.id}`} data-testid={`input-admin-location-${vehicle.id}`} /></td><td><button className={`status-toggle ${vehicle.status === 'Available' ? 'status-available' : 'status-sold'}`} onClick={() => onUpdateVehicle(vehicle.id, { status: vehicle.status === 'Available' ? 'Sold' : 'Available' })} data-testid={`button-admin-status-${vehicle.id}`}>{vehicle.status}</button></td><td><Link href={`/inventory/${vehicle.id}`} aria-label={`Open ${vehicle.make} ${vehicle.model}`} data-testid={`link-admin-open-${vehicle.id}`}><Eye size={16} /></Link></td></tr>)}</tbody></table></div><p className="admin-note"><Pencil size={11} style={{ verticalAlign: '-2px' }} /> Inline fields are live. Toggle a status to publish or archive from the public showroom.</p></div>;
+}
+
+function RouterContent({ vehicles, savedIds, onToggleSaved, onUpdateVehicle }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void; onUpdateVehicle: (id: string, patch: Partial<Vehicle>) => void }) {
+  return <Shell savedCount={savedIds.length}><Switch><Route path="/inventory/:id"><VehicleDetail vehicles={vehicles} savedIds={savedIds} onToggleSaved={onToggleSaved} /></Route><Route path="/inventory"><InventoryPage vehicles={vehicles} savedIds={savedIds} onToggleSaved={onToggleSaved} /></Route><Route path="/saved"><SavedPage vehicles={vehicles} savedIds={savedIds} onToggleSaved={onToggleSaved} /></Route><Route path="/admin"><AdminPage vehicles={vehicles} onUpdateVehicle={onUpdateVehicle} /></Route><Route path="/"><HomePage vehicles={vehicles} savedIds={savedIds} onToggleSaved={onToggleSaved} /></Route><Route><div className="page"><div className="empty-state"><CircleHelp size={29} /><h3>Page not found.</h3><Link className="button button-primary" href="/" data-testid="link-not-found-home">Return home</Link></div></div></Route></Switch></Shell>;
+}
+
+function App() {
+  const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
+    try { const stored = localStorage.getItem('carwebs-vehicles'); return stored ? JSON.parse(stored) : initialVehicles; } catch { return initialVehicles; }
+  });
+  const [savedIds, setSavedIds] = useState<string[]>(() => {
+    try { const stored = localStorage.getItem('carwebs-saved'); return stored ? JSON.parse(stored) : []; } catch { return []; }
+  });
+  useEffect(() => { localStorage.setItem('carwebs-vehicles', JSON.stringify(vehicles)); }, [vehicles]);
+  useEffect(() => { localStorage.setItem('carwebs-saved', JSON.stringify(savedIds)); }, [savedIds]);
+  const toggleSaved = (id: string) => setSavedIds((current) => current.includes(id) ? current.filter((savedId) => savedId !== id) : [...current, id]);
+  const updateVehicle = (id: string, patch: Partial<Vehicle>) => setVehicles((current) => current.map((vehicle) => vehicle.id === id ? { ...vehicle, ...patch } : vehicle));
+  return <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><RouterContent vehicles={vehicles} savedIds={savedIds} onToggleSaved={toggleSaved} onUpdateVehicle={updateVehicle} /></WouterRouter>;
+}
+
+export default App;
