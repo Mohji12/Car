@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import {
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
   type TouchEvent as ReactTouchEvent,
   useEffect,
@@ -77,18 +78,28 @@ function Logo({ full = false }: { full?: boolean }) {
   return <img className="header-logo" src="/carwebs-motors-logo-lockup.png" alt="CarWebs Motors Ltd" data-testid="img-header-logo" />;
 }
 
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function Shell({ children, savedCount }: { children: ReactNode; savedCount: number }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const isHome = location === '/';
   const tabs = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/inventory', label: 'Inventory', icon: LayoutGrid },
     { href: `/saved`, label: `Saved${savedCount ? ` (${savedCount})` : ''}`, icon: Heart },
   ];
+  const goHomeTop = (event: ReactMouseEvent) => {
+    event.preventDefault();
+    if (location !== '/') setLocation('/');
+    scrollToTop();
+    requestAnimationFrame(scrollToTop);
+  };
   return (
     <div className="app-shell">
       <header className={`topbar ${isHome ? 'home-topbar' : ''}`}>
-        <Link href="/" className="brand-link" data-testid="link-brand"><Logo /></Link>
+        <Link href="/" className="brand-link" data-testid="link-brand" onClick={goHomeTop}><Logo /></Link>
         <nav className="desktop-nav" aria-label="Main navigation">
           <Link href="/" className={location === '/' ? 'active' : ''} data-testid="link-nav-home">Showroom</Link>
           <Link href="/inventory" className={location.startsWith('/inventory') ? 'active' : ''} data-testid="link-nav-inventory">Available stock</Link>
