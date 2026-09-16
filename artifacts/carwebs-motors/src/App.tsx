@@ -44,6 +44,7 @@ import {
   type VehiclePatch,
 } from '@workspace/api-client-react';
 import { sampleVehicles } from '@/data/sample-vehicles';
+import { apiUrl } from '@/lib/api';
 import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
 
 const WHATSAPP = '447456954813';
@@ -803,7 +804,7 @@ function AdminPage() {
     try {
       const body = new FormData();
       Array.from(files).forEach((file) => body.append('files', file));
-      const response = await fetch(`/api/vehicles/${editingId}/images`, {
+      const response = await fetch(apiUrl(`/api/vehicles/${editingId}/images`), {
         method: 'POST',
         headers: { Authorization: `Bearer ${getAdminToken()}` },
         body,
@@ -830,7 +831,7 @@ function AdminPage() {
     try {
       const body = new FormData();
       body.append('file', files[0]);
-      const response = await fetch(`/api/vehicles/${editingId}/video`, {
+      const response = await fetch(apiUrl(`/api/vehicles/${editingId}/video`), {
         method: 'POST',
         headers: { Authorization: `Bearer ${getAdminToken()}` },
         body,
