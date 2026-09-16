@@ -50,5 +50,7 @@ artifacts/api-python/data/
 artifacts/api-python/uploads/
 artifacts/api-python/.venv/
 artifacts/api-python/.python-version
+artifacts/api-python/**/__pycache__/
+*.pyc
 .env
 .env.local
