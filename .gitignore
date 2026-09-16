@@ -44,6 +44,11 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
-# Replit
 .cache/
 .local/
+artifacts/api-python/data/
+artifacts/api-python/uploads/
+artifacts/api-python/.venv/
+artifacts/api-python/.python-version
+.env
+.env.local

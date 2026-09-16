@@ -1,6 +1,5 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
   description: API specification
@@ -10,6 +9,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: vehicles
+    description: Vehicle inventory
+  - name: analytics
+    description: Admin analytics
 paths:
   /healthz:
     get:
@@ -24,7 +27,185 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /vehicles:
+    get:
+      operationId: listVehicles
+      tags: [vehicles]
+      summary: List vehicles
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [available, sold]
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: make
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Vehicle list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+    post:
+      operationId: createVehicle
+      tags: [vehicles]
+      summary: Create vehicle
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "401":
+          description: Unauthorized
+  /vehicles/{id}:
+    get:
+      operationId: getVehicle
+      tags: [vehicles]
+      summary: Get vehicle by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Vehicle detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateVehicle
+      tags: [vehicles]
+      summary: Update vehicle
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehiclePatch"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteVehicle
+      tags: [vehicles]
+      summary: Delete vehicle
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+  /vehicles/{id}/images:
+    post:
+      operationId: uploadVehicleImages
+      tags: [vehicles]
+      summary: Upload vehicle images
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "200":
+          description: Updated vehicle with new image URLs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+  /analytics/summary:
+    get:
+      operationId: getAnalyticsSummary
+      tags: [analytics]
+      summary: Admin analytics summary
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Summary metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSummary"
+        "401":
+          description: Unauthorized
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: token
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +214,286 @@ components:
           type: string
       required:
         - status
-
+    SpecItem:
+      type: object
+      properties:
+        label:
+          type: string
+        value:
+          type: string
+      required:
+        - label
+        - value
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+        make:
+          type: string
+        model:
+          type: string
+        variant:
+          type: string
+        year:
+          type: integer
+        price:
+          type: integer
+        mileage:
+          type: integer
+        fuel:
+          type: string
+        transmission:
+          type: string
+        bodyType:
+          type: string
+        colour:
+          type: string
+        location:
+          type: string
+        status:
+          type: string
+          enum: [available, sold]
+        tags:
+          type: array
+          items:
+            type: string
+        featured:
+          type: boolean
+        description:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+        specs:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpecItem"
+        images:
+          type: array
+          items:
+            type: string
+        condition:
+          type: string
+        doors:
+          type: integer
+          nullable: true
+        engineSize:
+          type: string
+          nullable: true
+        registrationDate:
+          type: string
+          nullable: true
+        registrationPlate:
+          type: string
+          nullable: true
+        videoUrl:
+          type: string
+          nullable: true
+        viewCount:
+          type: integer
+        addedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - make
+        - model
+        - variant
+        - year
+        - price
+        - mileage
+        - fuel
+        - transmission
+        - bodyType
+        - colour
+        - location
+        - status
+        - tags
+        - featured
+        - description
+        - highlights
+        - specs
+        - images
+        - condition
+        - viewCount
+        - addedAt
+        - updatedAt
+    VehicleInput:
+      type: object
+      properties:
+        id:
+          type: string
+        make:
+          type: string
+        model:
+          type: string
+        variant:
+          type: string
+        year:
+          type: integer
+        price:
+          type: integer
+        mileage:
+          type: integer
+        fuel:
+          type: string
+        transmission:
+          type: string
+        bodyType:
+          type: string
+        colour:
+          type: string
+        location:
+          type: string
+        status:
+          type: string
+          enum: [available, sold]
+        tags:
+          type: array
+          items:
+            type: string
+        featured:
+          type: boolean
+        description:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+        specs:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpecItem"
+        images:
+          type: array
+          items:
+            type: string
+        condition:
+          type: string
+        doors:
+          type: integer
+          nullable: true
+        engineSize:
+          type: string
+          nullable: true
+        registrationDate:
+          type: string
+          nullable: true
+        registrationPlate:
+          type: string
+          nullable: true
+        videoUrl:
+          type: string
+          nullable: true
+      required:
+        - make
+        - model
+        - year
+        - price
+        - mileage
+        - fuel
+        - transmission
+        - bodyType
+        - colour
+    VehiclePatch:
+      type: object
+      properties:
+        make:
+          type: string
+        model:
+          type: string
+        variant:
+          type: string
+        year:
+          type: integer
+        price:
+          type: integer
+        mileage:
+          type: integer
+        fuel:
+          type: string
+        transmission:
+          type: string
+        bodyType:
+          type: string
+        colour:
+          type: string
+        location:
+          type: string
+        status:
+          type: string
+          enum: [available, sold]
+        tags:
+          type: array
+          items:
+            type: string
+        featured:
+          type: boolean
+        description:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+        specs:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpecItem"
+        images:
+          type: array
+          items:
+            type: string
+        condition:
+          type: string
+        doors:
+          type: integer
+          nullable: true
+        engineSize:
+          type: string
+          nullable: true
+        registrationDate:
+          type: string
+          nullable: true
+        registrationPlate:
+          type: string
+          nullable: true
+        videoUrl:
+          type: string
+          nullable: true
+    AnalyticsSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        available:
+          type: integer
+        sold:
+          type: integer
+        newArrival:
+          type: integer
+        featured:
+          type: integer
+        totalViews:
+          type: integer
+        topViewed:
+          type: array
+          items:
+            $ref: "#/components/schemas/Vehicle"
+        recent:
+          type: array
+          items:
+            $ref: "#/components/schemas/Vehicle"
+      required:
+        - total
+        - available
+        - sold
+        - newArrival
+        - featured
+        - totalViews
+        - topViewed
+        - recent

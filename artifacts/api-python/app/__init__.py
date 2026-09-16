@@ -1,0 +1,1 @@
+"""CarWebs Motors FastAPI application."""

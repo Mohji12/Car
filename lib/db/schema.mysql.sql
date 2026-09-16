@@ -1,0 +1,36 @@
+-- CarWebs Motors — MySQL schema
+-- Database: Car
+
+CREATE TABLE IF NOT EXISTS vehicles (
+  id                   VARCHAR(64)  NOT NULL PRIMARY KEY,
+  make                 VARCHAR(128) NOT NULL,
+  model                VARCHAR(128) NOT NULL,
+  variant              VARCHAR(255) NOT NULL DEFAULT '',
+  year                 INT NOT NULL,
+  price                INT NOT NULL,
+  mileage              INT NOT NULL,
+  fuel                 VARCHAR(64) NOT NULL,
+  transmission         VARCHAR(64) NOT NULL,
+  body_type            VARCHAR(64) NOT NULL,
+  colour               VARCHAR(128) NOT NULL,
+  location             VARCHAR(255) NOT NULL DEFAULT 'St Albans',
+  status               VARCHAR(32) NOT NULL DEFAULT 'available',
+  tags                 JSON NOT NULL,
+  featured             TINYINT(1) NOT NULL DEFAULT 0,
+  description          TEXT NOT NULL,
+  highlights           JSON NOT NULL,
+  specs                JSON NOT NULL,
+  images               JSON NOT NULL,
+  `condition`          VARCHAR(64) NOT NULL DEFAULT 'Used',
+  doors                INT NULL,
+  engine_size          VARCHAR(64) NULL,
+  registration_date    VARCHAR(64) NULL,
+  registration_plate   VARCHAR(64) NULL,
+  video_url            TEXT NULL,
+  view_count           INT NOT NULL DEFAULT 0,
+  added_at             DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at           DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  INDEX idx_vehicles_status (status),
+  INDEX idx_vehicles_make (make),
+  INDEX idx_vehicles_added_at (added_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

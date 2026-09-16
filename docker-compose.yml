@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: carwebs
+      POSTGRES_PASSWORD: carwebs
+      POSTGRES_DB: carwebs
+    volumes:
+      - carwebs_pg:/var/lib/postgresql/data
+
+volumes:
+  carwebs_pg:
