@@ -26,10 +26,10 @@ SEED_VEHICLES: list[dict] = [
         "tags": ["new_arrival"],
         "featured": True,
         "description": (
-            "Part service history, fresh service at 96,734, MOT till 18.06.2026, 2 keys, "
-            "4 owners, sat nav, USB/AUX port, full electric windows, £20 year road tax, "
-            "ISOFIX, HPI clear. Warranty available from 3, 6, 12 and 24 months. We accept "
-            "all major credit / debit cards. P/X welcome."
+            "Part service history, 96,734 miles, 4 owners, fresh service at 96,734, "
+            "MOT till 18.06.2026, 2 keys, sat nav, USB/AUX port, full electric windows, "
+            "£20 year road tax, ISOFIX, HPI clear. Warranty available from 3, 6, 12 and "
+            "24 months. We accept all major credit / debit cards. P/X welcome."
         ),
         "highlights": [
             "MOT till 18.06.2026",
@@ -73,9 +73,10 @@ SEED_VEHICLES: list[dict] = [
         "tags": ["featured"],
         "featured": True,
         "description": (
-            "A properly specified M4 with the composure to cross the country and the "
-            "intent to make every clear road count. Presented with a complete history "
-            "and prepared in-house."
+            "Full service history, 12,400 miles, 1 owner, M Sport Pro pack, carbon fibre trim, "
+            "Harman Kardon audio, 360° camera, 2 keys, HPI clear. Warranty available "
+            "from 3, 6, 12 and 24 months. We accept all major credit / debit cards. "
+            "P/X welcome."
         ),
         "highlights": [
             "M Sport Pro pack",
@@ -87,7 +88,7 @@ SEED_VEHICLES: list[dict] = [
             {"label": "Engine", "value": "3.0 litre twin-turbo"},
             {"label": "Power", "value": "503 bhp"},
             {"label": "0–62 mph", "value": "3.5 seconds"},
-            {"label": "CO₂", "value": "227 g/km"},
+            {"label": "Owners", "value": "1"},
         ],
         "images": [_image(170811), _image(116675), _image(112460)],
         "condition": "Used",
@@ -117,8 +118,9 @@ SEED_VEHICLES: list[dict] = [
         "tags": ["featured"],
         "featured": True,
         "description": (
-            "The GTS is the Macan at its most convincing: quiet, quick and beautifully "
-            "balanced. A refined everyday performance car with a considered specification."
+            "Full Porsche service history, 23,800 miles, 1 owner, panoramic roof, sports exhaust, "
+            "Porsche Entry, adaptive cruise, 2 keys, HPI clear. Warranty available from "
+            "3, 6, 12 and 24 months. We accept all major credit / debit cards. P/X welcome."
         ),
         "highlights": [
             "Panoramic roof",
@@ -129,8 +131,8 @@ SEED_VEHICLES: list[dict] = [
         "specs": [
             {"label": "Engine", "value": "2.9 litre V6"},
             {"label": "Power", "value": "434 bhp"},
-            {"label": "0–62 mph", "value": "4.5 seconds"},
             {"label": "Service history", "value": "Full Porsche"},
+            {"label": "Owners", "value": "1"},
         ],
         "images": [_image(244206), _image(170811), _image(305070)],
         "condition": "Used",
@@ -160,8 +162,9 @@ SEED_VEHICLES: list[dict] = [
         "tags": ["featured"],
         "featured": True,
         "description": (
-            "A sharp, quiet and remarkably efficient C-Class with the right premium "
-            "details. Its hybrid powertrain makes long journeys effortless."
+            "Full service history, 18,900 miles, 1 owner, Burmester audio, Night package, "
+            "heated seats, MBUX navigation, 2 keys, HPI clear. Warranty available from "
+            "3, 6, 12 and 24 months. We accept all major credit / debit cards. P/X welcome."
         ),
         "highlights": [
             "Burmester audio",
@@ -203,8 +206,10 @@ SEED_VEHICLES: list[dict] = [
         "tags": [],
         "featured": False,
         "description": (
-            "Calm, confident and wonderfully ergonomic. A Volvo XC60 with understated "
-            "style and all the thoughtful details."
+            "Full service history, 30,100 miles, 1 owner, Pilot Assist, Harman Kardon, "
+            "heated steering wheel, 360° camera, 2 keys, HPI clear. Warranty available "
+            "from 3, 6, 12 and 24 months. We accept all major credit / debit cards. "
+            "P/X welcome."
         ),
         "highlights": [
             "Pilot Assist",

@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   MessageCircle,
   Pencil,
+  Phone,
   Plus,
   RefreshCw,
   Search,
@@ -51,6 +52,7 @@ import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } f
 const WHATSAPP = '447456954813';
 const PHONE_PRIMARY = '07456 954813';
 const PHONE_SECONDARY = '01727 294240';
+const PHONE_TEL = `+44${PHONE_PRIMARY.replace(/\s/g, '').slice(1)}`;
 const EMAIL = 'info@carwebs.co.uk';
 const ADMIN_TOKEN_KEY = 'carwebs-admin-token';
 
@@ -74,7 +76,7 @@ function getAdminToken() {
 setAuthTokenGetter(() => getAdminToken());
 
 function Logo({ full = false }: { full?: boolean }) {
-  if (full) return <img className="footer-logo" src="/carwebs-motors-logo.jpeg" alt="CarWebs Motors Ltd official logo" data-testid="img-official-logo" />;
+  if (full) return <img className="footer-logo" src="/carwebs-motors-logo-lockup.png" alt="CarWebs Motors Ltd official logo" data-testid="img-official-logo" />;
   return <img className="header-logo" src="/carwebs-motors-logo-lockup.png" alt="CarWebs Motors Ltd" data-testid="img-header-logo" />;
 }
 
@@ -275,6 +277,26 @@ function VehicleCard({ vehicle, saved, onToggleSaved, compact = false }: { vehic
           <div className="vehicle-price"><strong>{formatPrice(vehicle.price)}</strong><small>{vehicle.location}</small></div>
         </div>
       </Link>
+      <div className="vehicle-card-actions">
+        <a
+          className="card-action card-action-call"
+          href={`tel:${PHONE_TEL}`}
+          onClick={(event) => event.stopPropagation()}
+          data-testid={`link-call-${vehicle.id}`}
+        >
+          <Phone size={14} /> Call
+        </a>
+        <a
+          className="card-action card-action-whatsapp"
+          href={whatsAppUrl([vehicle])}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(event) => event.stopPropagation()}
+          data-testid={`link-whatsapp-${vehicle.id}`}
+        >
+          <MessageCircle size={14} /> WhatsApp
+        </a>
+      </div>
     </article>
   );
 }
@@ -296,7 +318,7 @@ function Footer() {
           </div>
           <div>
             <b>Talk to us</b>
-            <a href={`tel:+44${PHONE_PRIMARY.replace(/\s/g, '').slice(1)}`}>{PHONE_PRIMARY}</a>
+            <a href={`tel:${PHONE_TEL}`}>{PHONE_PRIMARY}</a>
             <a href={`tel:+44${PHONE_SECONDARY.replace(/\s/g, '').slice(1)}`}>{PHONE_SECONDARY}</a>
             <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
           </div>
@@ -325,8 +347,7 @@ function HeroSlideshow({ vehicles }: { vehicles: Vehicle[] }) {
     return () => window.clearInterval(timer);
   }, [slides.length]);
 
-  const current = slides[index] ?? slides[0];
-  if (!current) {
+  if (!slides.length) {
     return <div className="hero-visual"><img src="https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1500" alt="Performance car" className="active" /></div>;
   }
 
@@ -335,11 +356,6 @@ function HeroSlideshow({ vehicles }: { vehicles: Vehicle[] }) {
       {slides.map((vehicle, slideIndex) => (
         <img key={vehicle.id} src={vehicle.images[0]} alt={`${vehicle.make} ${vehicle.model}`} className={slideIndex === index ? 'active' : ''} />
       ))}
-      <div className="hero-plate" key={current.id}>
-        <small>JUST LANDED / {current.id.toUpperCase()}</small>
-        <b>{current.make} {current.model}</b>
-        <span>{formatPrice(current.price)} · {formatMileage(current.mileage)}</span>
-      </div>
     </div>
   );
 }
@@ -550,8 +566,11 @@ function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicl
           <h1>{vehicle.make}<span>{vehicle.model}</span></h1>
           <div className="detail-price">{formatPrice(vehicle.price)}</div>
           <p>{vehicle.variant} · {vehicle.year} · {formatMileage(vehicle.mileage)}</p>
-          <a className="button button-whatsapp" href={whatsAppUrl([vehicle])} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Enquire about this car</a>
-          <button className={`button ${savedIds.includes(vehicle.id) ? 'button-primary' : 'button-dark'}`} onClick={() => onToggleSaved(vehicle.id)}><Heart size={16} fill={savedIds.includes(vehicle.id) ? 'currentColor' : 'none'} /> {savedIds.includes(vehicle.id) ? 'Saved to shortlist' : 'Save to shortlist'}</button>
+          <div className="detail-actions">
+            <a className="button button-whatsapp" href={whatsAppUrl([vehicle])} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Enquire about this car</a>
+            <a className="button button-dark" href={`tel:${PHONE_TEL}`}><Phone size={16} /> Call dealership</a>
+            <button className={`button ${savedIds.includes(vehicle.id) ? 'button-primary' : 'button-outline'}`} onClick={() => onToggleSaved(vehicle.id)}><Heart size={16} fill={savedIds.includes(vehicle.id) ? 'currentColor' : 'none'} /> {savedIds.includes(vehicle.id) ? 'Saved to shortlist' : 'Save to shortlist'}</button>
+          </div>
         </div>
       </section>
 
@@ -684,6 +703,9 @@ function AdminPage() {
   const [highlightText, setHighlightText] = useState('');
   const [uploading, setUploading] = useState(false);
   const [formMessage, setFormMessage] = useState('');
+  const [extractText, setExtractText] = useState('');
+  const [extracting, setExtracting] = useState(false);
+  const [extractReady, setExtractReady] = useState(false);
 
   const { data: apiVehicles, refetch } = useListVehicles(undefined, {
     query: {
@@ -729,6 +751,8 @@ function AdminPage() {
     setForm(emptyForm());
     setHighlightText('');
     setFormMessage('');
+    setExtractText('');
+    setExtractReady(false);
     setAdminView('add');
   };
 
@@ -762,6 +786,8 @@ function AdminPage() {
     });
     setHighlightText(vehicle.highlights.join(', '));
     setFormMessage('');
+    setExtractText('');
+    setExtractReady(false);
     setAdminView('add');
   };
 
@@ -790,7 +816,64 @@ function AdminPage() {
       setForm((current) => ({ ...current, images: created.images, videoUrl: created.videoUrl }));
       setFormMessage('Listing published. Now upload images or a video for this car.');
     }
+    setExtractReady(false);
     await invalidate();
+  };
+
+  const extractFromText = async () => {
+    if (extractText.trim().length < 10) {
+      setFormMessage('Paste more listing details before extracting.');
+      return;
+    }
+    setExtracting(true);
+    setFormMessage('');
+    try {
+      const response = await fetch(apiUrl('/api/vehicles/extract'), {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${getAdminToken()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: extractText }),
+      });
+      const payload = await response.json().catch(() => ({})) as { message?: string } & Partial<VehicleInput>;
+      if (!response.ok) {
+        throw new Error(payload.message || 'Extract failed');
+      }
+      setForm((current) => ({
+        ...current,
+        make: payload.make || current.make,
+        model: payload.model || current.model,
+        variant: payload.variant ?? current.variant,
+        year: typeof payload.year === 'number' ? payload.year : current.year,
+        price: typeof payload.price === 'number' ? payload.price : current.price,
+        mileage: typeof payload.mileage === 'number' ? payload.mileage : current.mileage,
+        fuel: payload.fuel || current.fuel,
+        transmission: payload.transmission || current.transmission,
+        bodyType: payload.bodyType || current.bodyType,
+        colour: payload.colour || current.colour,
+        location: payload.location || current.location || 'St Albans',
+        status: payload.status === 'sold' ? 'sold' : 'available',
+        tags: payload.tags ?? current.tags,
+        featured: Boolean(payload.featured),
+        description: payload.description || current.description,
+        highlights: payload.highlights ?? current.highlights,
+        specs: payload.specs ?? current.specs,
+        condition: payload.condition || current.condition || 'Used',
+        doors: payload.doors ?? current.doors,
+        engineSize: payload.engineSize ?? current.engineSize,
+        registrationDate: payload.registrationDate ?? current.registrationDate,
+        registrationPlate: payload.registrationPlate ?? current.registrationPlate,
+      }));
+      setHighlightText((payload.highlights || []).join(', '));
+      setExtractReady(true);
+      setFormMessage('Details extracted. Review the fields below, then Publish to add to the site.');
+    } catch (error) {
+      setExtractReady(false);
+      setFormMessage(error instanceof Error ? error.message : 'Extract failed.');
+    } finally {
+      setExtracting(false);
+    }
   };
 
   const remove = async (id: string) => {
@@ -820,13 +903,13 @@ function AdminPage() {
         headers: { Authorization: `Bearer ${getAdminToken()}` },
         body,
       });
-      if (!response.ok) throw new Error('Upload failed');
-      const updated = (await response.json()) as Vehicle;
-      setForm((current) => ({ ...current, images: updated.images }));
-      setFormMessage('Images uploaded to S3.');
+      const payload = await response.json().catch(() => ({})) as Vehicle & { message?: string };
+      if (!response.ok) throw new Error(payload.message || 'Upload failed');
+      setForm((current) => ({ ...current, images: payload.images }));
+      setFormMessage(`Images uploaded (${payload.images?.length ?? 0} total).`);
       await invalidate();
-    } catch {
-      setFormMessage('Image upload failed.');
+    } catch (error) {
+      setFormMessage(error instanceof Error ? error.message : 'Image upload failed.');
     } finally {
       setUploading(false);
     }
@@ -847,13 +930,13 @@ function AdminPage() {
         headers: { Authorization: `Bearer ${getAdminToken()}` },
         body,
       });
-      if (!response.ok) throw new Error('Upload failed');
-      const updated = (await response.json()) as Vehicle;
-      setForm((current) => ({ ...current, videoUrl: updated.videoUrl }));
+      const payload = await response.json().catch(() => ({})) as Vehicle & { message?: string };
+      if (!response.ok) throw new Error(payload.message || 'Upload failed');
+      setForm((current) => ({ ...current, videoUrl: payload.videoUrl }));
       setFormMessage('Video uploaded to S3.');
       await invalidate();
-    } catch {
-      setFormMessage('Video upload failed.');
+    } catch (error) {
+      setFormMessage(error instanceof Error ? error.message : 'Video upload failed.');
     } finally {
       setUploading(false);
     }
@@ -1014,6 +1097,44 @@ function AdminPage() {
         <form className="admin-form admin-form-solo" onSubmit={(e) => { e.preventDefault(); void save(); }}>
           <div className="eyebrow">{editingId ? `Editing ${editingId}` : 'Create listing'}</div>
           <h2>{editingId ? 'Update vehicle' : 'List a car'}</h2>
+
+          {!editingId && (
+            <div className="admin-extract-block">
+              <div className="eyebrow">Gemini / extract</div>
+              <h3>Paste listing details</h3>
+              <p className="admin-media-hint">
+                Drop in a dealer blurb or notes. Gemini fills the form — review everything, then Publish to add it to the site.
+              </p>
+              <label className="admin-full">
+                Free-text details
+                <textarea
+                  className="admin-input"
+                  rows={6}
+                  value={extractText}
+                  onChange={(e) => setExtractText(e.target.value)}
+                  placeholder="e.g. 2020 Audi A3 S line, Mythos Black, 32,400 miles, £18,995, full service history, 1 owner, virtual cockpit…"
+                  data-testid="input-ai-extract"
+                />
+              </label>
+              <div className="admin-form-actions">
+                <button
+                  type="button"
+                  className="button button-dark"
+                  disabled={extracting}
+                  onClick={() => void extractFromText()}
+                  data-testid="button-ai-extract"
+                >
+                  {extracting ? 'Extracting…' : 'Extract details'}
+                </button>
+              </div>
+              {extractReady && (
+                <p className="admin-extract-banner" data-testid="banner-ai-review">
+                  Review the fields below, then Publish to add to the site.
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="admin-form-grid">
             <label>Make<input className="admin-input" required value={form.make} onChange={(e) => setForm({ ...form, make: e.target.value })} /></label>
             <label>Model<input className="admin-input" required value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} /></label>

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import JSONResponse, Response
 
 from ..auth import require_admin
-from ..models import Vehicle, VehicleInput, VehiclePatch
+from ..gemini_extract import GeminiExtractError, extract_vehicle_from_text
+from ..models import Vehicle, VehicleExtractRequest, VehicleExtractResult, VehicleInput, VehiclePatch
 from ..s3 import S3UploadError, upload_bytes
 from ..store import (
     StoreConflictError,
@@ -32,6 +32,21 @@ async def list_vehicles_route(
     make: str | None = None,
 ) -> list[Vehicle]:
     return await list_vehicles(status=status_filter, tag=tag, make=make)
+
+
+@router.post(
+    "/vehicles/extract",
+    response_model=VehicleExtractResult,
+    dependencies=[Depends(require_admin)],
+)
+async def extract_vehicle_route(body: VehicleExtractRequest) -> VehicleExtractResult:
+    try:
+        return await asyncio.to_thread(extract_vehicle_from_text, body.text)
+    except GeminiExtractError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(exc)},
+        ) from exc
 
 
 @router.get("/vehicles/{vehicle_id}", response_model=Vehicle)

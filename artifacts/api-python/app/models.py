@@ -121,3 +121,38 @@ class AnalyticsSummary(BaseModel):
 
 class Message(BaseModel):
     message: str = Field(..., description="Error message")
+
+
+class VehicleExtractRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    text: str = Field(..., min_length=10, description="Free-text listing details to extract")
+
+
+class VehicleExtractResult(BaseModel):
+    """Draft vehicle fields from Gemini — not persisted until admin publishes."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    make: str = ""
+    model: str = ""
+    variant: str = ""
+    year: int | None = None
+    price: int | None = None
+    mileage: int | None = None
+    fuel: str = "Petrol"
+    transmission: str = "Manual"
+    bodyType: str = "Hatchback"
+    colour: str = ""
+    location: str = "St Albans"
+    status: Literal["available", "sold"] = "available"
+    tags: list[str] = Field(default_factory=list)
+    featured: bool = False
+    description: str = ""
+    highlights: list[str] = Field(default_factory=list)
+    specs: list[SpecItem] = Field(default_factory=list)
+    condition: str = "Used"
+    doors: int | None = None
+    engineSize: str | None = None
+    registrationDate: str | None = None
+    registrationPlate: str | None = None

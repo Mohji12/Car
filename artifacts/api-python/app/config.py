@@ -22,6 +22,8 @@ class Settings:
     s3_bucket: str | None
     aws_region: str
     s3_public_acl: bool
+    gemini_api_key: str | None
+    gemini_model: str
 
 
 def _build_database_url() -> str | None:
@@ -70,4 +72,6 @@ def get_settings() -> Settings:
         s3_bucket=os.environ.get("S3_BUCKET") or None,
         aws_region=os.environ.get("AWS_REGION") or "us-east-1",
         s3_public_acl=os.environ.get("S3_PUBLIC_ACL", "false").lower() in {"1", "true", "yes"},
+        gemini_api_key=os.environ.get("GEMINI_API_KEY") or None,
+        gemini_model=os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash",
     )

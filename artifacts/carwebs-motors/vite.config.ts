@@ -15,7 +15,8 @@ const basePath = process.env.BASE_PATH || '/';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, path.resolve(import.meta.dirname), '');
   const apiTarget =
-    env.VITE_API_BASE_URL || 'https://car.bengalurutechcommunity.com';
+    env.VITE_API_BASE_URL || 'http://127.0.0.1:5000';
+  const apiIsHttps = apiTarget.startsWith('https://');
 
   return {
     base: basePath,
@@ -49,12 +50,12 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: apiTarget,
           changeOrigin: true,
-          secure: true,
+          secure: apiIsHttps,
         },
         '/uploads': {
           target: apiTarget,
           changeOrigin: true,
-          secure: true,
+          secure: apiIsHttps,
         },
       },
     },
