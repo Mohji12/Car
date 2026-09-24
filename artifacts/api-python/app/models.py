@@ -12,6 +12,22 @@ class SpecItem(BaseModel):
     value: str
 
 
+class NamedCategory(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+    items: list[str] = Field(default_factory=list)
+
+
+class RunningCosts(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    mpgUrban: float | None = None
+    mpgExtraUrban: float | None = None
+    mpgAverage: float | None = None
+    roadTaxPerYear: float | None = None
+
+
 class Vehicle(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -40,6 +56,9 @@ class Vehicle(BaseModel):
     registrationDate: str | None = None
     registrationPlate: str | None = None
     videoUrl: str | None = None
+    featureCategories: list[NamedCategory] = Field(default_factory=list)
+    specCategories: list[NamedCategory] = Field(default_factory=list)
+    runningCosts: RunningCosts | None = None
     viewCount: int
     addedAt: str
     updatedAt: str
@@ -73,6 +92,9 @@ class VehicleInput(BaseModel):
     registrationDate: str | None = None
     registrationPlate: str | None = None
     videoUrl: str | None = None
+    featureCategories: list[NamedCategory] | None = None
+    specCategories: list[NamedCategory] | None = None
+    runningCosts: RunningCosts | None = None
 
 
 class VehiclePatch(BaseModel):
@@ -102,6 +124,23 @@ class VehiclePatch(BaseModel):
     registrationDate: str | None = None
     registrationPlate: str | None = None
     videoUrl: str | None = None
+    featureCategories: list[NamedCategory] | None = None
+    specCategories: list[NamedCategory] | None = None
+    runningCosts: RunningCosts | None = None
+
+
+class ParseVehicleDetailsRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    text: str
+
+
+class ParseVehicleDetailsResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    featureCategories: list[NamedCategory] = Field(default_factory=list)
+    specCategories: list[NamedCategory] = Field(default_factory=list)
+    runningCosts: RunningCosts | None = None
 
 
 class HealthStatus(BaseModel):

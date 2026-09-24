@@ -16,7 +16,7 @@ load_dotenv(ROOT_DIR / ".env")
 
 from .config import get_settings  # noqa: E402
 from .db import dispose_engine  # noqa: E402
-from .routers import analytics, health, vehicles  # noqa: E402
+from .routers import admin, analytics, health, vehicles  # noqa: E402
 
 
 @asynccontextmanager
@@ -63,6 +63,7 @@ def create_app() -> FastAPI:
     api.include_router(health.router)
     api.include_router(vehicles.router)
     api.include_router(analytics.router)
+    api.include_router(admin.router)
     application.include_router(api)
     application.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
     return application

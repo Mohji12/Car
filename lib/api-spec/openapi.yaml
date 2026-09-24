@@ -13,6 +13,8 @@ tags:
     description: Vehicle inventory
   - name: analytics
     description: Admin analytics
+  - name: admin
+    description: Admin helpers
 paths:
   /healthz:
     get:
@@ -200,6 +202,32 @@ paths:
                 $ref: "#/components/schemas/AnalyticsSummary"
         "401":
           description: Unauthorized
+  /admin/parse-vehicle-details:
+    post:
+      operationId: parseVehicleDetails
+      tags: [admin]
+      summary: Parse pasted listing text with Gemini
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParseVehicleDetailsRequest"
+      responses:
+        "200":
+          description: Structured vehicle details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParseVehicleDetailsResponse"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "502":
+          description: Gemini upstream error
 components:
   securitySchemes:
     bearerAuth:
@@ -224,6 +252,57 @@ components:
       required:
         - label
         - value
+    NamedCategory:
+      type: object
+      properties:
+        name:
+          type: string
+        items:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+        - items
+    RunningCosts:
+      type: object
+      properties:
+        mpgUrban:
+          type: number
+          nullable: true
+        mpgExtraUrban:
+          type: number
+          nullable: true
+        mpgAverage:
+          type: number
+          nullable: true
+        roadTaxPerYear:
+          type: number
+          nullable: true
+    ParseVehicleDetailsRequest:
+      type: object
+      properties:
+        text:
+          type: string
+      required:
+        - text
+    ParseVehicleDetailsResponse:
+      type: object
+      properties:
+        featureCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/NamedCategory"
+        specCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/NamedCategory"
+        runningCosts:
+          $ref: "#/components/schemas/RunningCosts"
+          nullable: true
+      required:
+        - featureCategories
+        - specCategories
     Vehicle:
       type: object
       properties:
@@ -291,6 +370,17 @@ components:
         videoUrl:
           type: string
           nullable: true
+        featureCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/NamedCategory"
+        specCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/NamedCategory"
+        runningCosts:
+          $ref: "#/components/schemas/RunningCosts"
+          nullable: true
         viewCount:
           type: integer
         addedAt:
@@ -320,6 +410,8 @@ components:
         - specs
         - images
         - condition
+        - featureCategories
+        - specCategories
         - viewCount
         - addedAt
         - updatedAt
@@ -389,6 +481,17 @@ components:
           nullable: true
         videoUrl:
           type: string
+          nullable: true
+        featureCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/NamedCategory"
+        specCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/NamedCategory"
+        runningCosts:
+          $ref: "#/components/schemas/RunningCosts"
           nullable: true
       required:
         - make
@@ -464,6 +567,17 @@ components:
           nullable: true
         videoUrl:
           type: string
+          nullable: true
+        featureCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/NamedCategory"
+        specCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/NamedCategory"
+        runningCosts:
+          $ref: "#/components/schemas/RunningCosts"
           nullable: true
     AnalyticsSummary:
       type: object

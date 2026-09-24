@@ -32,6 +32,13 @@ class VehicleRow(Base):
     highlights: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     specs: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     images: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    feature_categories: Mapped[list] = mapped_column(
+        "feature_categories", JSON, nullable=False, default=list
+    )
+    spec_categories: Mapped[list] = mapped_column(
+        "spec_categories", JSON, nullable=False, default=list
+    )
+    running_costs: Mapped[dict | None] = mapped_column("running_costs", JSON, nullable=True)
     condition: Mapped[str] = mapped_column("condition", String(64), nullable=False, default="Used")
     doors: Mapped[int | None] = mapped_column(Integer, nullable=True)
     engine_size: Mapped[str | None] = mapped_column("engine_size", String(64), nullable=True)

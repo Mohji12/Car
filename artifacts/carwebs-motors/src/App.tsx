@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import {
+  type ChangeEvent as ReactChangeEvent,
+  type DragEvent as ReactDragEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   type TouchEvent as ReactTouchEvent,
@@ -40,7 +42,10 @@ import {
   useGetAnalyticsSummary,
   useGetVehicle,
   useListVehicles,
+  useParseVehicleDetails,
   useUpdateVehicle,
+  type NamedCategory,
+  type RunningCosts,
   type Vehicle,
   type VehicleInput,
   type VehiclePatch,
@@ -624,6 +629,106 @@ function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicl
           <div className="spec-table">{overview.map((spec) => <div className="spec-row" key={spec.label}><span>{spec.label}</span><b>{spec.value}</b></div>)}</div>
         </div>
       </section>
+
+      {nonemptyCategories(vehicle.featureCategories).length > 0 && (
+        <section className="detail-accordions">
+          <div className="section-head">
+            <div><div className="eyebrow">Equipment</div><h2>Features.</h2></div>
+          </div>
+          {nonemptyCategories(vehicle.featureCategories).map((category) => (
+            <details className="detail-accordion" key={`feature-${category.name}`}>
+              <summary>
+                <span>{category.name}</span>
+                <span className="count-badge">{category.items.length}</span>
+              </summary>
+              <ul>
+                {category.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </details>
+          ))}
+        </section>
+      )}
+
+      {nonemptyCategories(vehicle.specCategories).length > 0 && (
+        <section className="detail-accordions">
+          <div className="section-head">
+            <div><div className="eyebrow">Technical</div><h2>Spec.</h2></div>
+          </div>
+          {nonemptyCategories(vehicle.specCategories).map((category) => (
+            <details className="detail-accordion" key={`spec-${category.name}`}>
+              <summary>
+                <span>{category.name}</span>
+                <span className="count-badge">{category.items.length}</span>
+              </summary>
+              <ul>
+                {category.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </details>
+          ))}
+        </section>
+      )}
+
+      {vehicle.runningCosts &&
+        (vehicle.runningCosts.mpgUrban != null ||
+          vehicle.runningCosts.mpgExtraUrban != null ||
+          vehicle.runningCosts.mpgAverage != null ||
+          vehicle.runningCosts.roadTaxPerYear != null) && (
+        <section className="running-costs">
+          <div className="section-head">
+            <div><div className="eyebrow">Ownership</div><h2>Running costs.</h2></div>
+          </div>
+          <p className="running-costs-intro">
+            Get an idea of how much this vehicle might cost to run including miles per gallon and road tax.
+          </p>
+          {(vehicle.runningCosts.mpgAverage != null ||
+            vehicle.runningCosts.mpgUrban != null ||
+            vehicle.runningCosts.mpgExtraUrban != null) && (
+            <div className="running-costs-block">
+              <h3>Miles per gallon (MPG)</h3>
+              {vehicle.runningCosts.mpgAverage != null && (
+                <div className="running-costs-hero">{vehicle.runningCosts.mpgAverage}mpg</div>
+              )}
+              <p className="running-costs-note">
+                A vehicle’s MPG can vary depending on where you usually drive it. Here’s what you can expect from this vehicle on different roads.
+              </p>
+              <div className="running-costs-rows">
+                {vehicle.runningCosts.mpgUrban != null && (
+                  <div>
+                    <span>Urban</span>
+                    <b>{vehicle.runningCosts.mpgUrban}mpg</b>
+                    <small>Driving around towns and cities</small>
+                  </div>
+                )}
+                {vehicle.runningCosts.mpgExtraUrban != null && (
+                  <div>
+                    <span>Extra Urban</span>
+                    <b>{vehicle.runningCosts.mpgExtraUrban}mpg</b>
+                    <small>Driving in towns and on faster A-roads</small>
+                  </div>
+                )}
+                {vehicle.runningCosts.mpgAverage != null && (
+                  <div>
+                    <span>Average</span>
+                    <b>{vehicle.runningCosts.mpgAverage}mpg</b>
+                    <small>Urban and extra urban combined</small>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {vehicle.runningCosts.roadTaxPerYear != null && (
+            <div className="running-costs-block">
+              <h3>Road tax per year</h3>
+              <div className="running-costs-hero">£{vehicle.runningCosts.roadTaxPerYear}</div>
+            </div>
+          )}
+        </section>
+      )}
+
       {similar.length > 0 && (
         <section className="similar-section">
           <div className="section-head">
@@ -664,6 +769,93 @@ function SavedPage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[];
   );
 }
 
+const DEFAULT_FEATURE_CATEGORIES: NamedCategory[] = [
+  { name: 'Audio and Communications', items: [] },
+  { name: 'Drivers Assistance', items: [] },
+  { name: 'Exterior', items: [] },
+  { name: 'Illumination', items: [] },
+  { name: 'Interior', items: [] },
+  { name: 'Performance', items: [] },
+  { name: 'Safety and Security', items: [] },
+];
+
+const DEFAULT_SPEC_CATEGORIES: NamedCategory[] = [
+  { name: 'Performance', items: [] },
+  { name: 'Size and dimensions', items: [] },
+];
+
+const emptyRunningCosts = (): RunningCosts => ({
+  mpgUrban: null,
+  mpgExtraUrban: null,
+  mpgAverage: null,
+  roadTaxPerYear: null,
+});
+
+function nonemptyCategories(categories: NamedCategory[] | undefined | null): NamedCategory[] {
+  return (categories || []).filter((category) => category.name.trim() && category.items.some((item) => item.trim()));
+}
+
+function CategoryEditor({
+  title,
+  categories,
+  onChange,
+}: {
+  title: string;
+  categories: NamedCategory[];
+  onChange: (next: NamedCategory[]) => void;
+}) {
+  return (
+    <div className="admin-category-block">
+      <h3>{title}</h3>
+      {categories.map((category, index) => (
+        <details className="admin-category" key={`${category.name}-${index}`} open={index === 0}>
+          <summary>
+            <input
+              className="admin-input admin-category-name"
+              value={category.name}
+              onChange={(event) => {
+                const next = [...categories];
+                next[index] = { ...category, name: event.target.value };
+                onChange(next);
+              }}
+              onClick={(event) => event.stopPropagation()}
+            />
+            <span className="count-badge">{category.items.filter(Boolean).length}</span>
+          </summary>
+          <textarea
+            className="admin-input"
+            rows={Math.max(4, category.items.length + 1)}
+            placeholder="One item per line"
+            value={category.items.join('\n')}
+            onChange={(event) => {
+              const next = [...categories];
+              next[index] = {
+                ...category,
+                items: event.target.value.split('\n').map((line) => line.trimEnd()),
+              };
+              onChange(next);
+            }}
+          />
+          <button
+            type="button"
+            className="button button-outline button-small"
+            onClick={() => onChange(categories.filter((_, i) => i !== index))}
+          >
+            Remove category
+          </button>
+        </details>
+      ))}
+      <button
+        type="button"
+        className="button button-outline button-small"
+        onClick={() => onChange([...categories, { name: 'New category', items: [] }])}
+      >
+        Add category
+      </button>
+    </div>
+  );
+}
+
 const emptyForm = (): VehicleInput => ({
   make: '',
   model: '',
@@ -689,6 +881,9 @@ const emptyForm = (): VehicleInput => ({
   registrationDate: '',
   registrationPlate: '',
   videoUrl: '',
+  featureCategories: DEFAULT_FEATURE_CATEGORIES.map((item) => ({ ...item, items: [] })),
+  specCategories: DEFAULT_SPEC_CATEGORIES.map((item) => ({ ...item, items: [] })),
+  runningCosts: emptyRunningCosts(),
 });
 
 function AdminPage() {
@@ -701,6 +896,7 @@ function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<VehicleInput>(emptyForm());
   const [highlightText, setHighlightText] = useState('');
+  const [pasteText, setPasteText] = useState('');
   const [uploading, setUploading] = useState(false);
   const [formMessage, setFormMessage] = useState('');
   const [extractText, setExtractText] = useState('');
@@ -720,6 +916,7 @@ function AdminPage() {
   const createMutation = useCreateVehicle();
   const updateMutation = useUpdateVehicle();
   const deleteMutation = useDeleteVehicle();
+  const parseMutation = useParseVehicleDetails();
 
   const listed = vehicles.filter((vehicle) => vehicle.status === statusFilter);
 
@@ -750,6 +947,7 @@ function AdminPage() {
     setEditingId(null);
     setForm(emptyForm());
     setHighlightText('');
+    setPasteText('');
     setFormMessage('');
     setExtractText('');
     setExtractReady(false);
@@ -783,8 +981,16 @@ function AdminPage() {
       registrationDate: vehicle.registrationDate,
       registrationPlate: vehicle.registrationPlate,
       videoUrl: vehicle.videoUrl,
+      featureCategories: vehicle.featureCategories?.length
+        ? vehicle.featureCategories
+        : DEFAULT_FEATURE_CATEGORIES.map((item) => ({ ...item, items: [] })),
+      specCategories: vehicle.specCategories?.length
+        ? vehicle.specCategories
+        : DEFAULT_SPEC_CATEGORIES.map((item) => ({ ...item, items: [] })),
+      runningCosts: vehicle.runningCosts || emptyRunningCosts(),
     });
     setHighlightText(vehicle.highlights.join(', '));
+    setPasteText('');
     setFormMessage('');
     setExtractText('');
     setExtractReady(false);
@@ -801,11 +1007,35 @@ function AdminPage() {
   };
 
   const save = async () => {
+    const featureCategories = (form.featureCategories || [])
+      .map((category) => ({
+        name: category.name.trim(),
+        items: category.items.map((item) => item.trim()).filter(Boolean),
+      }))
+      .filter((category) => category.name);
+    const specCategories = (form.specCategories || [])
+      .map((category) => ({
+        name: category.name.trim(),
+        items: category.items.map((item) => item.trim()).filter(Boolean),
+      }))
+      .filter((category) => category.name);
+    const costs = form.runningCosts || emptyRunningCosts();
+    const runningCosts: RunningCosts | null =
+      costs.mpgUrban == null &&
+      costs.mpgExtraUrban == null &&
+      costs.mpgAverage == null &&
+      costs.roadTaxPerYear == null
+        ? null
+        : costs;
+
     const payload: VehicleInput = {
       ...form,
       highlights: highlightText.split(',').map((h) => h.trim()).filter(Boolean),
       featured: Boolean(form.featured || form.tags?.includes('featured')),
       videoUrl: form.videoUrl?.trim() || null,
+      featureCategories,
+      specCategories,
+      runningCosts,
     };
     if (editingId) {
       await updateMutation.mutateAsync({ id: editingId, data: payload as VehiclePatch });
@@ -813,7 +1043,14 @@ function AdminPage() {
     } else {
       const created = await createMutation.mutateAsync({ data: payload });
       setEditingId(created.id);
-      setForm((current) => ({ ...current, images: created.images, videoUrl: created.videoUrl }));
+      setForm((current) => ({
+        ...current,
+        images: created.images,
+        videoUrl: created.videoUrl,
+        featureCategories: created.featureCategories,
+        specCategories: created.specCategories,
+        runningCosts: created.runningCosts || emptyRunningCosts(),
+      }));
       setFormMessage('Listing published. Now upload images or a video for this car.');
     }
     setExtractReady(false);
@@ -876,6 +1113,30 @@ function AdminPage() {
     }
   };
 
+  const parsePastedDetails = async () => {
+    if (!pasteText.trim()) {
+      setFormMessage('Paste the full listing text first.');
+      return;
+    }
+    setFormMessage('Parsing with Gemini…');
+    try {
+      const parsed = await parseMutation.mutateAsync({ data: { text: pasteText } });
+      setForm((current) => ({
+        ...current,
+        featureCategories: parsed.featureCategories.length
+          ? parsed.featureCategories
+          : current.featureCategories,
+        specCategories: parsed.specCategories.length
+          ? parsed.specCategories
+          : current.specCategories,
+        runningCosts: parsed.runningCosts || current.runningCosts || emptyRunningCosts(),
+      }));
+      setFormMessage('Gemini filled Features, Spec, and Running costs. Review, then save.');
+    } catch {
+      setFormMessage('Gemini parse failed. Check GEMINI_API_KEY on the API server.');
+    }
+  };
+
   const remove = async (id: string) => {
     if (!window.confirm('Delete this listing?')) return;
     await deleteMutation.mutateAsync({ id });
@@ -888,16 +1149,30 @@ function AdminPage() {
     await invalidate();
   };
 
-  const uploadImages = async (files: FileList | null) => {
-    if (!files?.length || !editingId) {
+  const MAX_IMAGES = 12;
+
+  const uploadImages = async (files: FileList | File[] | null) => {
+    if (!editingId) {
       setFormMessage('Save the listing first, then upload images.');
       return;
     }
+    const remaining = Math.max(0, MAX_IMAGES - (form.images?.length || 0));
+    if (remaining === 0) {
+      setFormMessage(`This car already has ${MAX_IMAGES} images. Remove some to add more.`);
+      return;
+    }
+    const selected = Array.from(files || []).filter((file) => file.type.startsWith('image/'));
+    if (!selected.length) {
+      setFormMessage('No image files selected. Choose JPG, PNG, or WebP photos.');
+      return;
+    }
+    const batch = selected.slice(0, remaining);
+    const skipped = selected.length - batch.length;
     setUploading(true);
-    setFormMessage('');
+    setFormMessage(`Uploading ${batch.length} image${batch.length === 1 ? '' : 's'}…`);
     try {
       const body = new FormData();
-      Array.from(files).forEach((file) => body.append('files', file));
+      batch.forEach((file) => body.append('files', file));
       const response = await fetch(apiUrl(`/api/vehicles/${editingId}/images`), {
         method: 'POST',
         headers: { Authorization: `Bearer ${getAdminToken()}` },
@@ -906,13 +1181,29 @@ function AdminPage() {
       const payload = await response.json().catch(() => ({})) as Vehicle & { message?: string };
       if (!response.ok) throw new Error(payload.message || 'Upload failed');
       setForm((current) => ({ ...current, images: payload.images }));
-      setFormMessage(`Images uploaded (${payload.images?.length ?? 0} total).`);
-      await invalidate();
+      setFormMessage(
+        skipped > 0
+          ? `Uploaded ${batch.length} image${batch.length === 1 ? '' : 's'}. ${skipped} skipped (max ${MAX_IMAGES}).`
+          : `Images uploaded (${payload.images?.length ?? 0} total).`,
+      );      await invalidate();
     } catch (error) {
       setFormMessage(error instanceof Error ? error.message : 'Image upload failed.');
     } finally {
       setUploading(false);
     }
+  };
+
+  const onImagePickerChange = (event: ReactChangeEvent<HTMLInputElement>) => {
+    const { files } = event.target;
+    void uploadImages(files);
+    event.target.value = '';
+  };
+
+  const onImageDrop = (event: ReactDragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (uploading || !editingId) return;
+    void uploadImages(event.dataTransfer.files);
   };
 
   const uploadVideo = async (files: FileList | null) => {
@@ -1166,12 +1457,127 @@ function AdminPage() {
           <label className="admin-full">Description<textarea className="admin-input" rows={4} value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
           <label className="admin-full">Highlights (comma separated)<input className="admin-input" value={highlightText} onChange={(e) => setHighlightText(e.target.value)} /></label>
 
+          <div className="admin-details-block">
+            <div className="eyebrow">Structured details</div>
+            <h3>Features, Spec & running costs</h3>
+            <p className="admin-media-hint">
+              Paste the full listing text once and let Gemini split it, or edit the categories manually below.
+            </p>
+            <label className="admin-full">
+              Paste full listing text
+              <textarea
+                className="admin-input"
+                rows={8}
+                placeholder="Paste Features, Spec, Running costs text here…"
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="button button-primary button-small"
+              disabled={parseMutation.isPending || !pasteText.trim()}
+              onClick={() => void parsePastedDetails()}
+            >
+              {parseMutation.isPending ? 'Parsing…' : 'Parse with Gemini'}
+            </button>
+
+            <CategoryEditor
+              title="Features"
+              categories={form.featureCategories || []}
+              onChange={(featureCategories) => setForm({ ...form, featureCategories })}
+            />
+            <CategoryEditor
+              title="Spec"
+              categories={form.specCategories || []}
+              onChange={(specCategories) => setForm({ ...form, specCategories })}
+            />
+
+            <div className="admin-running-costs">
+              <h3>Running costs</h3>
+              <div className="admin-grid">
+                <label>
+                  Urban MPG
+                  <input
+                    className="admin-input"
+                    type="number"
+                    step="0.1"
+                    value={form.runningCosts?.mpgUrban ?? ''}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        runningCosts: {
+                          ...(form.runningCosts || emptyRunningCosts()),
+                          mpgUrban: e.target.value === '' ? null : Number(e.target.value),
+                        },
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Extra Urban MPG
+                  <input
+                    className="admin-input"
+                    type="number"
+                    step="0.1"
+                    value={form.runningCosts?.mpgExtraUrban ?? ''}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        runningCosts: {
+                          ...(form.runningCosts || emptyRunningCosts()),
+                          mpgExtraUrban: e.target.value === '' ? null : Number(e.target.value),
+                        },
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Average MPG
+                  <input
+                    className="admin-input"
+                    type="number"
+                    step="0.1"
+                    value={form.runningCosts?.mpgAverage ?? ''}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        runningCosts: {
+                          ...(form.runningCosts || emptyRunningCosts()),
+                          mpgAverage: e.target.value === '' ? null : Number(e.target.value),
+                        },
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Road tax £ / year
+                  <input
+                    className="admin-input"
+                    type="number"
+                    step="1"
+                    value={form.runningCosts?.roadTaxPerYear ?? ''}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        runningCosts: {
+                          ...(form.runningCosts || emptyRunningCosts()),
+                          roadTaxPerYear: e.target.value === '' ? null : Number(e.target.value),
+                        },
+                      })
+                    }
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
             <div className="admin-media-block">
             <div className="eyebrow"><Video size={12} /> Media</div>
             <h3>Images & video</h3>
             <p className="admin-media-hint">
-              Add multiple photos (up to 12) and one video. Customers see the gallery and video on the car page.
-              Publish first, then upload files — or paste a YouTube/Vimeo link anytime.
+              Dump all photos for this car in one go (up to {MAX_IMAGES} total) — multi-select in the file picker or drag a whole batch onto the drop zone.
+              Publish the listing first, then upload. One video file or a YouTube/Vimeo link anytime.
             </p>
             <label className="admin-full">Video link (YouTube / Vimeo / direct MP4)
               <input className="admin-input" placeholder="https://..." value={form.videoUrl || ''} onChange={(e) => setForm({ ...form, videoUrl: e.target.value })} />
@@ -1179,15 +1585,40 @@ function AdminPage() {
             {form.videoUrl ? (
               <a className="admin-video-link" href={form.videoUrl} target="_blank" rel="noreferrer">Open current video</a>
             ) : null}
-            <div className="admin-media-actions">
-              <label className="admin-file-btn">
-                Upload more images
-                <input type="file" accept="image/*" multiple disabled={uploading || !editingId} onChange={(e) => void uploadImages(e.target.files)} />
-              </label>
-              <label className="admin-file-btn">
-                Upload video file
-                <input type="file" accept="video/*" disabled={uploading || !editingId} onChange={(e) => void uploadVideo(e.target.files)} />
-              </label>
+            <div
+              className={`admin-dropzone ${uploading ? 'is-busy' : ''} ${!editingId ? 'is-disabled' : ''}`}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+              onDrop={onImageDrop}
+            >
+              <strong>Drop all car photos here</strong>
+              <span>Or click below and multi-select every image at once (Ctrl/Cmd + click, or Shift + click).</span>
+              <div className="admin-media-actions">
+                <label className="admin-file-btn">
+                  Select all photos
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    disabled={uploading || !editingId}
+                    onChange={onImagePickerChange}
+                  />
+                </label>
+                <label className="admin-file-btn">
+                  Upload video file
+                  <input
+                    type="file"
+                    accept="video/*"
+                    disabled={uploading || !editingId}
+                    onChange={(e) => {
+                      void uploadVideo(e.target.files);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              </div>
             </div>
             {!editingId && <p className="admin-note">Save the car details first to enable image/video file uploads.</p>}
             {(form.images || []).length > 0 && (
@@ -1201,13 +1632,17 @@ function AdminPage() {
               </div>
             )}
             {(form.images || []).length > 0 && (
-              <p className="admin-note">{(form.images || []).length} image{(form.images || []).length === 1 ? '' : 's'} attached. Upload again to add more.</p>
+              <p className="admin-note">
+                {(form.images || []).length} / {MAX_IMAGES} images attached.
+                {' '}
+                You can dump more in another batch anytime.
+              </p>
             )}
           </div>
 
           {formMessage && <p className="admin-form-message">{formMessage}</p>}
           <div className="admin-form-actions">
-            <button className="button button-primary" type="submit" disabled={createMutation.isPending || updateMutation.isPending || uploading}>
+            <button className="button button-primary" type="submit" disabled={createMutation.isPending || updateMutation.isPending || uploading || parseMutation.isPending}>
               {editingId ? 'Save changes' : 'Publish listing'}
             </button>
             {editingId && (

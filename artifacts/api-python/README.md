@@ -21,6 +21,8 @@ DB_PORT=3306
 DB_USER=...
 DB_PASSWORD=...
 DB_NAME=Car
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.0-flash
 ```
 
 ## MySQL schema + seed
@@ -29,6 +31,15 @@ DB_NAME=Car
 python scripts\create_mysql_tables.py
 python scripts\seed_mysql.py
 ```
+
+If the `vehicles` table already exists, add the Features/Spec/Running costs columns:
+
+```powershell
+# from repo root, against your Car database
+Get-Content lib\db\migrations\2026_03_24_vehicle_details.sql | mysql -h HOST -u USER -p Car
+```
+
+Admin paste-to-structure uses `POST /api/admin/parse-vehicle-details` (Bearer admin token).
 
 Schema SQL: `lib/db/schema.mysql.sql`
 

@@ -23,6 +23,8 @@ import type {
   AnalyticsSummary,
   HealthStatus,
   ListVehiclesParams,
+  ParseVehicleDetailsRequest,
+  ParseVehicleDetailsResponse,
   UploadVehicleImagesBody,
   Vehicle,
   VehicleInput,
@@ -660,3 +662,55 @@ export function useGetAnalyticsSummary<TData = Awaited<ReturnType<typeof getAnal
 
 
 
+
+export const getParseVehicleDetailsUrl = () => {
+  return `/api/admin/parse-vehicle-details`
+}
+
+/**
+ * @summary Parse pasted listing text with Gemini
+ */
+export const parseVehicleDetails = async (
+  parseVehicleDetailsRequest: ParseVehicleDetailsRequest,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ParseVehicleDetailsResponse> => {
+  return customFetch<ParseVehicleDetailsResponse>(getParseVehicleDetailsUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(parseVehicleDetailsRequest),
+  });
+}
+
+export const getParseVehicleDetailsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof parseVehicleDetails>>, TError,{data: BodyType<ParseVehicleDetailsRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof parseVehicleDetails>>, TError,{data: BodyType<ParseVehicleDetailsRequest>}, TContext> => {
+
+const mutationKey = ['parseVehicleDetails'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof parseVehicleDetails>>, {data: BodyType<ParseVehicleDetailsRequest>}> = (props) => {
+          const {data} = props ?? {};
+          return  parseVehicleDetails(data, requestOptions)
+        }
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ParseVehicleDetailsMutationResult = NonNullable<Awaited<ReturnType<typeof parseVehicleDetails>>>
+    export type ParseVehicleDetailsMutationBody = BodyType<ParseVehicleDetailsRequest>
+    export type ParseVehicleDetailsMutationError = ErrorType<unknown>
+
+    export const useParseVehicleDetails = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof parseVehicleDetails>>, TError,{data: BodyType<ParseVehicleDetailsRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationResult<
+        Awaited<ReturnType<typeof parseVehicleDetails>>,
+        TError,
+        {data: BodyType<ParseVehicleDetailsRequest>},
+        TContext
+      > => {
+      return useMutation(getParseVehicleDetailsMutationOptions(options));
+    }

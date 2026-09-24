@@ -14,6 +14,28 @@ export interface SpecItem {
   value: string;
 }
 
+export interface NamedCategory {
+  name: string;
+  items: string[];
+}
+
+export interface RunningCosts {
+  mpgUrban?: number | null;
+  mpgExtraUrban?: number | null;
+  mpgAverage?: number | null;
+  roadTaxPerYear?: number | null;
+}
+
+export interface ParseVehicleDetailsRequest {
+  text: string;
+}
+
+export interface ParseVehicleDetailsResponse {
+  featureCategories: NamedCategory[];
+  specCategories: NamedCategory[];
+  runningCosts?: RunningCosts | null;
+}
+
 export type VehicleStatus = typeof VehicleStatus[keyof typeof VehicleStatus];
 
 
@@ -48,6 +70,9 @@ export interface Vehicle {
   registrationDate?: string | null;
   registrationPlate?: string | null;
   videoUrl?: string | null;
+  featureCategories: NamedCategory[];
+  specCategories: NamedCategory[];
+  runningCosts?: RunningCosts | null;
   viewCount: number;
   addedAt: string;
   updatedAt: string;
@@ -87,6 +112,9 @@ export interface VehicleInput {
   registrationDate?: string | null;
   registrationPlate?: string | null;
   videoUrl?: string | null;
+  featureCategories?: NamedCategory[];
+  specCategories?: NamedCategory[];
+  runningCosts?: RunningCosts | null;
 }
 
 export type VehiclePatchStatus = typeof VehiclePatchStatus[keyof typeof VehiclePatchStatus];
@@ -122,6 +150,9 @@ export interface VehiclePatch {
   registrationDate?: string | null;
   registrationPlate?: string | null;
   videoUrl?: string | null;
+  featureCategories?: NamedCategory[];
+  specCategories?: NamedCategory[];
+  runningCosts?: RunningCosts | null;
 }
 
 export interface AnalyticsSummary {
@@ -152,4 +183,3 @@ export const ListVehiclesStatus = {
 export type UploadVehicleImagesBody = {
   files: Blob[];
 };
-

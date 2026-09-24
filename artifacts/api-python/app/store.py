@@ -11,7 +11,15 @@ from sqlalchemy.exc import IntegrityError
 
 from .config import DATA_DIR, DATA_FILE
 from .db import detect_store, session_scope
-from .models import AnalyticsSummary, SpecItem, Vehicle, VehicleInput, VehiclePatch
+from .models import (
+    AnalyticsSummary,
+    NamedCategory,
+    RunningCosts,
+    SpecItem,
+    Vehicle,
+    VehicleInput,
+    VehiclePatch,
+)
 from .schema_sql import VehicleRow
 from .seed_data import SEED_VEHICLES
 
@@ -56,6 +64,65 @@ def _as_list(value: Any) -> list:
     return []
 
 
+def _as_categories(value: Any) -> list[dict[str, Any]]:
+    raw = _as_list(value)
+    categories: list[dict[str, Any]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or "").strip()
+        if not name:
+            continue
+        items_raw = item.get("items") or []
+        if isinstance(items_raw, str):
+            try:
+                items_raw = json.loads(items_raw)
+            except json.JSONDecodeError:
+                items_raw = [items_raw]
+        items = [
+            str(entry).strip()
+            for entry in (items_raw if isinstance(items_raw, list) else [])
+            if str(entry).strip()
+        ]
+        categories.append({"name": name, "items": items})
+    return categories
+
+
+def _as_running_costs(value: Any) -> dict[str, Any] | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError:
+            return None
+    if isinstance(value, RunningCosts):
+        return value.model_dump()
+    if not isinstance(value, dict):
+        return None
+    return RunningCosts.model_validate(value).model_dump()
+
+
+def _dump_categories(value: list[NamedCategory] | list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    if not value:
+        return []
+    result: list[dict[str, Any]] = []
+    for item in value:
+        if isinstance(item, NamedCategory):
+            result.append(item.model_dump())
+        elif isinstance(item, dict):
+            result.append(NamedCategory.model_validate(item).model_dump())
+    return result
+
+
+def _dump_running_costs(value: RunningCosts | dict[str, Any] | None) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if isinstance(value, RunningCosts):
+        return value.model_dump()
+    return RunningCosts.model_validate(value).model_dump()
+
+
 def to_vehicle(row: Any) -> Vehicle:
     if isinstance(row, Vehicle):
         return row
@@ -86,6 +153,9 @@ def to_vehicle(row: Any) -> Vehicle:
             "registrationDate": row.registration_date,
             "registrationPlate": row.registration_plate,
             "videoUrl": row.video_url,
+            "featureCategories": _as_categories(getattr(row, "feature_categories", None)),
+            "specCategories": _as_categories(getattr(row, "spec_categories", None)),
+            "runningCosts": _as_running_costs(getattr(row, "running_costs", None)),
             "viewCount": row.view_count or 0,
             "addedAt": _to_iso(row.added_at),
             "updatedAt": _to_iso(row.updated_at),
@@ -99,6 +169,15 @@ def to_vehicle(row: Any) -> Vehicle:
     data["highlights"] = _as_list(data.get("highlights"))
     data["specs"] = _as_list(data.get("specs"))
     data["images"] = _as_list(data.get("images"))
+    data["featureCategories"] = _as_categories(
+        data.get("featureCategories") or data.get("feature_categories")
+    )
+    data["specCategories"] = _as_categories(
+        data.get("specCategories") or data.get("spec_categories")
+    )
+    data["runningCosts"] = _as_running_costs(
+        data.get("runningCosts") if "runningCosts" in data else data.get("running_costs")
+    )
     data["condition"] = data.get("condition") or "Used"
     data["viewCount"] = data.get("viewCount") or 0
     data["addedAt"] = _to_iso(data.get("addedAt"))
@@ -219,6 +298,9 @@ def _build_record(input_data: VehicleInput) -> Vehicle:
         registrationDate=input_data.registrationDate,
         registrationPlate=input_data.registrationPlate,
         videoUrl=input_data.videoUrl,
+        featureCategories=input_data.featureCategories or [],
+        specCategories=input_data.specCategories or [],
+        runningCosts=input_data.runningCosts,
         viewCount=0,
         addedAt=now,
         updatedAt=now,
@@ -257,6 +339,9 @@ async def create_vehicle(input_data: VehicleInput) -> Vehicle:
         highlights=record.highlights,
         specs=[s.model_dump() if isinstance(s, SpecItem) else s for s in record.specs],
         images=record.images,
+        feature_categories=_dump_categories(record.featureCategories),
+        spec_categories=_dump_categories(record.specCategories),
+        running_costs=_dump_running_costs(record.runningCosts),
         condition=record.condition,
         doors=record.doors,
         engine_size=record.engineSize,
@@ -298,6 +383,12 @@ async def update_vehicle(vehicle_id: str, patch: VehiclePatch) -> Vehicle | None
             merged["specs"] = current.specs
         if "images" not in patch_data:
             merged["images"] = current.images
+        if "featureCategories" not in patch_data:
+            merged["featureCategories"] = current.featureCategories
+        if "specCategories" not in patch_data:
+            merged["specCategories"] = current.specCategories
+        if "runningCosts" not in patch_data:
+            merged["runningCosts"] = current.runningCosts
         merged["updatedAt"] = _now_iso()
         vehicles[index] = Vehicle.model_validate(merged)
         await _write_file_store(vehicles)
@@ -329,6 +420,9 @@ async def update_vehicle(vehicle_id: str, patch: VehiclePatch) -> Vehicle | None
         "registrationDate": "registration_date",
         "registrationPlate": "registration_plate",
         "videoUrl": "video_url",
+        "featureCategories": "feature_categories",
+        "specCategories": "spec_categories",
+        "runningCosts": "running_costs",
     }
     for key, column in field_map.items():
         if key in patch_data:
@@ -337,6 +431,10 @@ async def update_vehicle(vehicle_id: str, patch: VehiclePatch) -> Vehicle | None
                 value = [
                     s.model_dump() if isinstance(s, SpecItem) else s for s in value
                 ]
+            elif key in {"featureCategories", "specCategories"}:
+                value = _dump_categories(value)
+            elif key == "runningCosts":
+                value = _dump_running_costs(value)
             values[column] = value
 
     async with session_scope() as session:
