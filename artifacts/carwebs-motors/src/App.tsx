@@ -89,6 +89,14 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function ScrollToTopOnRouteChange() {
+  const [location] = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [location]);
+  return null;
+}
+
 function Shell({ children, savedCount }: { children: ReactNode; savedCount: number }) {
   const [location, setLocation] = useLocation();
   const isHome = location === '/';
@@ -1667,6 +1675,7 @@ function RouterContent({ savedIds, onToggleSaved }: { savedIds: string[]; onTogg
   const vehicles = (apiVehicles?.length ? apiVehicles : (sampleVehicles as Vehicle[]));
   return (
     <Shell savedCount={savedIds.length}>
+      <ScrollToTopOnRouteChange />
       <Switch>
         <Route path="/inventory/:id"><VehicleDetail vehicles={vehicles} savedIds={savedIds} onToggleSaved={onToggleSaved} /></Route>
         <Route path="/inventory"><InventoryPage vehicles={vehicles} savedIds={savedIds} onToggleSaved={onToggleSaved} loading={isLoading && !isError && !apiVehicles} /></Route>
