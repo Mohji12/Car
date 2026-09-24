@@ -54,12 +54,21 @@ import { sampleVehicles } from '@/data/sample-vehicles';
 import { apiUrl } from '@/lib/api';
 import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
 
-const WHATSAPP = '447456954813';
-const PHONE_PRIMARY = '07456 954813';
-const PHONE_SECONDARY = '01727 294240';
-const PHONE_TEL = `+44${PHONE_PRIMARY.replace(/\s/g, '').slice(1)}`;
+const WHATSAPP = '447533335233';
+const WHATSAPP_DISPLAY = '+44 7533 335233';
+const PHONE_DISPLAY = '+44 7533 335233';
+const PHONE_TEL = '+447533335233';
 const EMAIL = 'info@carwebs.co.uk';
 const ADMIN_TOKEN_KEY = 'carwebs-admin-token';
+
+const HERO_SLIDE_FILES = [
+  'ChatGPT Image Sep 25, 2026, 02_12_09 AM.png',
+  'ChatGPT Image Sep 25, 2026, 02_12_18 AM.png',
+  'ChatGPT Image Sep 25, 2026, 02_12_26 AM.png',
+  'ChatGPT Image Sep 25, 2026, 02_12_32 AM.png',
+] as const;
+
+const HERO_SLIDES = HERO_SLIDE_FILES.map((file) => encodeURI(`/${file}`));
 
 const formatPrice = (price: number) => `£${price.toLocaleString('en-GB')}`;
 const formatMileage = (mileage: number) => `${mileage.toLocaleString('en-GB')} miles`;
@@ -331,8 +340,8 @@ function Footer() {
           </div>
           <div>
             <b>Talk to us</b>
-            <a href={`tel:${PHONE_TEL}`}>{PHONE_PRIMARY}</a>
-            <a href={`tel:+44${PHONE_SECONDARY.replace(/\s/g, '').slice(1)}`}>{PHONE_SECONDARY}</a>
+            <a href={`tel:${PHONE_TEL}`}>Call: {PHONE_DISPLAY}</a>
+            <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer">WhatsApp: {WHATSAPP_DISPLAY}</a>
             <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
           </div>
         </div>
@@ -345,29 +354,26 @@ function Footer() {
   );
 }
 
-function HeroSlideshow({ vehicles }: { vehicles: Vehicle[] }) {
-  const slides = useMemo(
-    () => vehicles.filter((vehicle) => vehicle.status === 'available' && (vehicle.featured || vehicle.tags.includes('featured') || vehicle.tags.includes('new_arrival'))),
-    [vehicles],
-  );
+function HeroSlideshow() {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    if (slides.length <= 1) return;
+    if (HERO_SLIDES.length <= 1) return;
     const timer = window.setInterval(() => {
-      setIndex((current) => (current + 1) % slides.length);
-    }, 2800);
+      setIndex((current) => (current + 1) % HERO_SLIDES.length);
+    }, 3500);
     return () => window.clearInterval(timer);
-  }, [slides.length]);
-
-  if (!slides.length) {
-    return <div className="hero-visual"><img src="https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1500" alt="Performance car" className="active" /></div>;
-  }
+  }, []);
 
   return (
     <div className="hero-visual hero-slideshow" aria-live="polite">
-      {slides.map((vehicle, slideIndex) => (
-        <img key={vehicle.id} src={vehicle.images[0]} alt={`${vehicle.make} ${vehicle.model}`} className={slideIndex === index ? 'active' : ''} />
+      {HERO_SLIDES.map((src, slideIndex) => (
+        <img
+          key={src}
+          src={src}
+          alt={`CarWebs Motors featured vehicle ${slideIndex + 1}`}
+          className={slideIndex === index ? 'active' : ''}
+        />
       ))}
     </div>
   );
@@ -390,11 +396,12 @@ function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; 
           <p>CarWebs offers a curated selection of quality used cars. Enjoy unbeatable deals and exceptional customer service — trusted, transparent, and local in St Albans.</p>
           <div className="hero-actions">
             <Link href="/inventory" className="button button-primary" data-testid="link-hero-inventory">Browse available stock <ArrowRight size={16} /></Link>
-            <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer" className="button button-dark" data-testid="link-hero-whatsapp"><MessageCircle size={16} /> Talk to a specialist</a>
+            <a href={`tel:${PHONE_TEL}`} className="button button-dark" data-testid="link-hero-call"><Phone size={16} /> Call {PHONE_DISPLAY}</a>
+            <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer" className="button button-outline" data-testid="link-hero-whatsapp"><MessageCircle size={16} /> WhatsApp</a>
           </div>
           <div className="hero-note"><strong>01</strong><span>New arrivals checked<br />every weekday</span></div>
         </div>
-        <HeroSlideshow vehicles={vehicles} />
+        <HeroSlideshow />
       </section>
       <section className="build-strip">
         <div><b>The CarWebs standard</b><span>Details that add up</span></div>
@@ -580,8 +587,8 @@ function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicl
           <div className="detail-price">{formatPrice(vehicle.price)}</div>
           <p>{vehicle.variant} · {vehicle.year} · {formatMileage(vehicle.mileage)}</p>
           <div className="detail-actions">
-            <a className="button button-whatsapp" href={whatsAppUrl([vehicle])} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Enquire about this car</a>
             <a className="button button-dark" href={`tel:${PHONE_TEL}`}><Phone size={16} /> Call dealership</a>
+            <a className="button button-whatsapp" href={whatsAppUrl([vehicle])} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Enquire about this car</a>
             <button className={`button ${savedIds.includes(vehicle.id) ? 'button-primary' : 'button-outline'}`} onClick={() => onToggleSaved(vehicle.id)}><Heart size={16} fill={savedIds.includes(vehicle.id) ? 'currentColor' : 'none'} /> {savedIds.includes(vehicle.id) ? 'Saved to shortlist' : 'Save to shortlist'}</button>
           </div>
         </div>
@@ -625,10 +632,9 @@ function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicl
       )}
 
       <section className="spec-layout">
-        <div>
-          <div className="eyebrow">The detail</div>
-          <h2>Good cars deserve<br />the full picture.</h2>
-          <p className="description">{vehicle.description}</p>
+        <div className="vehicle-description-block">
+          <h2 className="vehicle-description-title">Description</h2>
+          <p className="description vehicle-description-body">{vehicle.description}</p>
           <div className="highlights">{vehicle.highlights.map((highlight) => <span className="highlight" key={highlight}><Check size={12} style={{ verticalAlign: '-2px', marginRight: 5 }} />{highlight}</span>)}</div>
         </div>
         <div>
@@ -765,7 +771,10 @@ function SavedPage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[];
           <>
             <div className="saved-cta">
               <p><b>{saved.length} {saved.length === 1 ? 'car' : 'cars'} saved.</b><span>Send the whole shortlist to our team in one message.</span></p>
-              <a className="button button-whatsapp button-small" href={whatsAppUrl(saved)} target="_blank" rel="noreferrer"><MessageCircle size={15} /> Enquire about these cars</a>
+              <div className="saved-cta-actions">
+                <a className="button button-dark button-small" href={`tel:${PHONE_TEL}`}><Phone size={15} /> Call</a>
+                <a className="button button-whatsapp button-small" href={whatsAppUrl(saved)} target="_blank" rel="noreferrer"><MessageCircle size={15} /> Enquire on WhatsApp</a>
+              </div>
             </div>
             <div className="saved-list">{saved.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} saved onToggleSaved={onToggleSaved} />)}</div>
           </>
