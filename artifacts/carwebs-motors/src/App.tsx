@@ -573,14 +573,14 @@ function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicl
 
   const standardSpecs = [
     { label: 'Make / model', value: `${vehicle.make} ${vehicle.model}` },
+    { label: 'Variant', value: vehicle.variant },
     { label: 'Registered', value: vehicle.registrationDate || (vehicle.year ? String(vehicle.year) : '—') },
+    { label: 'Plate', value: vehicle.registrationPlate || '—' },
     { label: 'Engine', value: engineVal },
     { label: 'Fuel / gearbox', value: `${vehicle.fuel} · ${vehicle.transmission}` },
-    { label: 'Doors', value: vehicle.doors != null ? String(vehicle.doors) : '—' },
     { label: 'Colour', value: vehicle.colour },
-    { label: 'Variant', value: vehicle.variant },
+    { label: 'Doors', value: vehicle.doors != null ? String(vehicle.doors) : '—' },
     { label: 'Condition', value: vehicle.condition },
-    { label: 'Plate', value: vehicle.registrationPlate || '—' },
     { label: 'Location', value: vehicle.location },
   ];
   const standardLabels = new Set(
