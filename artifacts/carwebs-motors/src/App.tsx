@@ -62,10 +62,10 @@ const EMAIL = 'info@carwebs.co.uk';
 const ADMIN_TOKEN_KEY = 'carwebs-admin-token';
 
 const HERO_SLIDE_FILES = [
-  'ChatGPT Image Sep 25, 2026, 02_12_09 AM.png',
-  'ChatGPT Image Sep 25, 2026, 02_12_18 AM.png',
-  'ChatGPT Image Sep 25, 2026, 02_12_26 AM.png',
-  'ChatGPT Image Sep 25, 2026, 02_12_32 AM.png',
+  'ChatGPT Image Sep 25, 2026, 04_56_12 PM.png',
+  'ChatGPT Image Sep 25, 2026, 04_09_00 PM.png',
+  'ChatGPT Image Sep 25, 2026, 04_13_24 PM.png',
+  'ChatGPT Image Sep 25, 2026, 04_15_50 PM.png',
 ] as const;
 
 const HERO_SLIDES = HERO_SLIDE_FILES.map((file) => encodeURI(`/${file}`));
@@ -361,7 +361,7 @@ function HeroSlideshow() {
     if (HERO_SLIDES.length <= 1) return;
     const timer = window.setInterval(() => {
       setIndex((current) => (current + 1) % HERO_SLIDES.length);
-    }, 3500);
+    }, 3800);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -375,12 +375,33 @@ function HeroSlideshow() {
           className={slideIndex === index ? 'active' : ''}
         />
       ))}
+      {HERO_SLIDES.length > 1 && (
+        <div className="hero-slideshow-dots" aria-label="Hero slide indicators">
+          {HERO_SLIDES.map((_, dotIndex) => (
+            <button
+              key={dotIndex}
+              type="button"
+              className={`hero-slideshow-dot ${dotIndex === index ? 'active' : ''}`}
+              onClick={() => setIndex(dotIndex)}
+              aria-label={`Show vehicle ${dotIndex + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void }) {
-  const featured = vehicles.filter((vehicle) => vehicle.status === 'available' && (vehicle.featured || vehicle.tags.includes('featured') || vehicle.tags.includes('new_arrival'))).slice(0, 3);
+  const featured = useMemo(() => {
+    const available = vehicles.filter((vehicle) => vehicle.status === 'available');
+    const tagged = available.filter(
+      (vehicle) => Boolean(vehicle.featured) || vehicle.tags?.includes('featured') || vehicle.tags?.includes('new_arrival')
+    );
+    if (tagged.length > 0) return tagged.slice(0, 6);
+    if (available.length > 0) return available.slice(0, 6);
+    return vehicles.slice(0, 6);
+  }, [vehicles]);
   const [testimonial, setTestimonial] = useState(0);
   const testimonials = [
     { name: 'S Alladi', quote: 'Amazing and genuine people. I purchased a car as a gift for my daughter. Great service, very professional and efficient. Highly recommended. Daughter loves the car — good price, clean compared to other dealers. Staff also friendly and helpful. Thank you.' },
@@ -397,7 +418,7 @@ function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; 
           <div className="hero-actions">
             <Link href="/inventory" className="button button-primary" data-testid="link-hero-inventory">Browse available stock <ArrowRight size={16} /></Link>
             <a href={`tel:${PHONE_TEL}`} className="button button-dark" data-testid="link-hero-call"><Phone size={16} /> Call {PHONE_DISPLAY}</a>
-            <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer" className="button button-outline" data-testid="link-hero-whatsapp"><MessageCircle size={16} /> WhatsApp</a>
+            <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer" className="button button-hero-whatsapp" data-testid="link-hero-whatsapp"><MessageCircle size={16} /> WhatsApp</a>
           </div>
           <div className="hero-note"><strong>01</strong><span>New arrivals checked<br />every weekday</span></div>
         </div>
