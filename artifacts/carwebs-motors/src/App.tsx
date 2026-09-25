@@ -567,19 +567,27 @@ function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicl
   const nextPhoto = (direction: number) => setPhoto((current) => (current + direction + images.length) % images.length);
   const video = getVideoEmbed(vehicle.videoUrl);
   const similar = vehicles.filter((item) => item.status === 'available' && item.id !== vehicle.id && (item.bodyType === vehicle.bodyType || item.make === vehicle.make)).slice(0, 3);
-  const overview = [
+  const engineVal = vehicle.engineSize
+    ? (vehicle.engineSize.toLowerCase().includes('l') ? vehicle.engineSize : `${vehicle.engineSize}L`)
+    : (vehicle.specs?.find((s) => s.label.toLowerCase().includes('engine'))?.value || '—');
+
+  const standardSpecs = [
     { label: 'Make / model', value: `${vehicle.make} ${vehicle.model}` },
-    { label: 'Variant', value: vehicle.variant },
-    { label: 'Condition', value: vehicle.condition },
-    { label: 'Colour', value: vehicle.colour },
+    { label: 'Registered', value: vehicle.registrationDate || (vehicle.year ? String(vehicle.year) : '—') },
+    { label: 'Engine', value: engineVal },
     { label: 'Fuel / gearbox', value: `${vehicle.fuel} · ${vehicle.transmission}` },
     { label: 'Doors', value: vehicle.doors != null ? String(vehicle.doors) : '—' },
-    { label: 'Engine size', value: vehicle.engineSize || '—' },
-    { label: 'Registered', value: vehicle.registrationDate || '—' },
+    { label: 'Colour', value: vehicle.colour },
+    { label: 'Variant', value: vehicle.variant },
+    { label: 'Condition', value: vehicle.condition },
     { label: 'Plate', value: vehicle.registrationPlate || '—' },
     { label: 'Location', value: vehicle.location },
-    ...vehicle.specs,
   ];
+  const standardLabels = new Set(
+    standardSpecs.map((s) => s.label.toLowerCase()).concat(['engine size', 'door', 'doors', 'color', 'colour', 'make', 'model'])
+  );
+  const extraSpecs = (vehicle.specs || []).filter((s) => !standardLabels.has(s.label.toLowerCase()));
+  const overview = [...standardSpecs, ...extraSpecs];
 
   return (
     <div className="detail-page">
