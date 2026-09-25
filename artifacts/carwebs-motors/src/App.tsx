@@ -618,7 +618,14 @@ function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicl
           <div className="detail-actions">
             <a className="button button-dark" href={`tel:${PHONE_TEL}`}><Phone size={16} /> Call dealership</a>
             <a className="button button-whatsapp" href={whatsAppUrl([vehicle])} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Enquire about this car</a>
-            <button className={`button ${savedIds.includes(vehicle.id) ? 'button-primary' : 'button-outline'}`} onClick={() => onToggleSaved(vehicle.id)}><Heart size={16} fill={savedIds.includes(vehicle.id) ? 'currentColor' : 'none'} /> {savedIds.includes(vehicle.id) ? 'Saved to shortlist' : 'Save to shortlist'}</button>
+            <button
+              className={`button ${savedIds.includes(vehicle.id) ? 'button-primary' : 'button-shortlist'}`}
+              onClick={() => onToggleSaved(vehicle.id)}
+              data-testid="button-detail-shortlist"
+            >
+              <Heart size={16} fill={savedIds.includes(vehicle.id) ? 'currentColor' : 'none'} />
+              {savedIds.includes(vehicle.id) ? 'Saved to shortlist' : 'Save to shortlist'}
+            </button>
           </div>
         </div>
       </section>
