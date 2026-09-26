@@ -394,7 +394,14 @@ function HeroSlideshow() {
 }
 
 function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void }) {
-  const featured = vehicles.filter((vehicle) => vehicle.status === 'available' && (vehicle.featured || vehicle.tags.includes('featured') || vehicle.tags.includes('new_arrival'))).slice(0, 3);
+  const source = vehicles && vehicles.length > 0 ? vehicles : (sampleVehicles as Vehicle[]);
+  const available = source.filter((vehicle) => vehicle.status === 'available');
+  const basePool = available.length > 0 ? available : source;
+  const pool = basePool.length >= 3
+    ? basePool
+    : [...basePool, ...(sampleVehicles as Vehicle[]).filter((sv) => !basePool.some((b) => b.id === sv.id))];
+  const tagged = pool.filter((vehicle) => vehicle.featured || vehicle.tags?.includes('featured') || vehicle.tags?.includes('new_arrival'));
+  const featured = (tagged.length >= 3 ? tagged : pool).slice(0, 6);
   const [testimonial, setTestimonial] = useState(0);
   const testimonials = [
     { name: 'S Alladi', quote: 'Amazing and genuine people. I purchased a car as a gift for my daughter. Great service, very professional and efficient. Highly recommended. Daughter loves the car — good price, clean compared to other dealers. Staff also friendly and helpful. Thank you.' },
@@ -560,18 +567,40 @@ function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicl
   const nextPhoto = (direction: number) => setPhoto((current) => (current + direction + images.length) % images.length);
   const video = getVideoEmbed(vehicle.videoUrl);
   const similar = vehicles.filter((item) => item.status === 'available' && item.id !== vehicle.id && (item.bodyType === vehicle.bodyType || item.make === vehicle.make)).slice(0, 3);
+  const registeredValue = vehicle.registrationDate || (vehicle.year ? String(vehicle.year) : '—');
+  const engineValue = vehicle.engineSize
+    ? vehicle.engineSize.toLowerCase().endsWith('l')
+      ? vehicle.engineSize
+      : `${vehicle.engineSize}L`
+    : '—';
   const overview = [
-    { label: 'Make / model', value: `${vehicle.make} ${vehicle.model}` },
-    { label: 'Variant', value: vehicle.variant },
-    { label: 'Condition', value: vehicle.condition },
-    { label: 'Colour', value: vehicle.colour },
-    { label: 'Fuel / gearbox', value: `${vehicle.fuel} · ${vehicle.transmission}` },
-    { label: 'Doors', value: vehicle.doors != null ? String(vehicle.doors) : '—' },
-    { label: 'Engine size', value: vehicle.engineSize || '—' },
-    { label: 'Registered', value: vehicle.registrationDate || '—' },
+    { label: 'Make / Model', value: `${vehicle.make} ${vehicle.model}` },
+    { label: 'Registered', value: registeredValue },
+    { label: 'Variant', value: vehicle.variant || '—' },
     { label: 'Plate', value: vehicle.registrationPlate || '—' },
-    { label: 'Location', value: vehicle.location },
-    ...vehicle.specs,
+    { label: 'Fuel / gearbox', value: `${vehicle.fuel} · ${vehicle.transmission}` },
+    { label: 'Engine Size', value: engineValue },
+    { label: 'Doors', value: vehicle.doors != null ? String(vehicle.doors) : '—' },
+    { label: 'Colour', value: vehicle.colour || '—' },
+    { label: 'Condition', value: vehicle.condition || '—' },
+    { label: 'Location', value: vehicle.location || '—' },
+    ...vehicle.specs.filter(
+      (spec) =>
+        ![
+          'make / model',
+          'make/model',
+          'registered',
+          'variant',
+          'plate',
+          'fuel / gearbox',
+          'fuel/gearbox',
+          'engine size',
+          'doors',
+          'colour',
+          'condition',
+          'location',
+        ].includes(spec.label.toLowerCase())
+    ),
   ];
 
   return (
@@ -652,8 +681,7 @@ function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicl
           <div className="highlights">{vehicle.highlights.map((highlight) => <span className="highlight" key={highlight}><Check size={12} style={{ verticalAlign: '-2px', marginRight: 5 }} />{highlight}</span>)}</div>
         </div>
         <div>
-          <div className="eyebrow">Car overview</div>
-          <h2>At a glance.</h2>
+          <h2 className="car-overview-title">Car Overview</h2>
           <div className="spec-table">{overview.map((spec) => <div className="spec-row" key={spec.label}><span>{spec.label}</span><b>{spec.value}</b></div>)}</div>
         </div>
       </section>

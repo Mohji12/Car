@@ -382,10 +382,38 @@ main { min-width: 0; }
   margin: 0;
 }
 .description { color: #626a74; line-height: 1.75; font-size: 14px; max-width: 680px; }
-.spec-table { border-top: 1px solid #cccac2; }
-.spec-row { display: flex; justify-content: space-between; border-bottom: 1px solid #cccac2; padding: 13px 0; font-size: 12px; }
-.spec-row span:first-child { color: #737982; font: 10px var(--app-font-mono); text-transform: uppercase; }
-.spec-row b { font-weight: 600; }
+.car-overview-title {
+  font-size: clamp(28px, 3.5vw, 38px);
+  font-weight: 800;
+  color: #11141a;
+  letter-spacing: -0.04em;
+  margin: 0 0 16px 0;
+  line-height: 1.1;
+}
+.spec-table { border-top: 2px solid #bbb8ae; }
+.spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #cccac2;
+  padding: 15px 0;
+  gap: 16px;
+}
+.spec-row span:first-child {
+  color: #4a515c;
+  font-family: var(--app-font-mono);
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+.spec-row b {
+  font-size: 17px;
+  font-weight: 800;
+  color: #11141a;
+  text-align: right;
+}
 .highlights { display: flex; flex-wrap: wrap; gap: 8px; margin: 26px 0; }
 .highlight { background: linear-gradient(105deg, #fff0e8, #edf7ff); color: var(--brand-deep); font-size: 11px; padding: 8px 10px; border-left: 2px solid var(--brand-orange); }
 .similar-section { border-top: 1px solid #cbc9c2; padding-top: 39px; }
@@ -714,7 +742,10 @@ main { min-width: 0; }
   .spec-layout { gap: 28px; padding: 20px 0 32px; }
   .vehicle-description-body { font-size: clamp(20px, 5.5vw, 28px); line-height: 1.5; }
   .spec-layout h2 { font-size: 24px; }
-  .spec-row { flex-wrap: wrap; gap: 6px; }
+  .car-overview-title { font-size: 26px; }
+  .spec-row { flex-wrap: wrap; gap: 6px; padding: 12px 0; }
+  .spec-row span:first-child { font-size: 13px; font-weight: 800; }
+  .spec-row b { font-size: 15px; font-weight: 800; text-align: left; }
 
   .vehicle-body { padding: 14px; }
   .vehicle-body h3 { font-size: 17px; }
