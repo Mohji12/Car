@@ -62,10 +62,11 @@ const EMAIL = 'info@carwebs.co.uk';
 const ADMIN_TOKEN_KEY = 'carwebs-admin-token';
 
 const HERO_SLIDE_FILES = [
-  'ChatGPT Image Sep 25, 2026, 04_56_12 PM.png',
-  'ChatGPT Image Sep 25, 2026, 04_09_00 PM.png',
-  'ChatGPT Image Sep 25, 2026, 04_13_24 PM.png',
-  'ChatGPT Image Sep 25, 2026, 04_15_50 PM.png',
+  'ChatGPT Image Sep 26, 2026, 04_34_35 AM.png',
+  'ChatGPT Image Sep 26, 2026, 04_46_01 AM.png',
+  'ChatGPT Image Sep 26, 2026, 04_27_57 AM.png',
+  'ChatGPT Image Sep 26, 2026, 04_28_46 AM.png',
+  'ChatGPT Image Sep 26, 2026, 04_25_52 AM.png',
 ] as const;
 
 const HERO_SLIDES = HERO_SLIDE_FILES.map((file) => encodeURI(`/${file}`));
@@ -347,8 +348,8 @@ function Footer() {
         </div>
       </div>
       <div className="footer-bottom">
-        <span>CARWEBS MOTORS LTD · EST. 2012</span>
-        <span>AUTO TRADER HIGHLY RATED 2018–2021</span>
+        <span>CARWEBS MOTORS LTD · EST. 2017</span>
+        <span>AUTO TRADER HIGHLY RATED 2018 TILL NOW</span>
       </div>
     </footer>
   );
@@ -361,7 +362,7 @@ function HeroSlideshow() {
     if (HERO_SLIDES.length <= 1) return;
     const timer = window.setInterval(() => {
       setIndex((current) => (current + 1) % HERO_SLIDES.length);
-    }, 3800);
+    }, 3500);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -375,33 +376,25 @@ function HeroSlideshow() {
           className={slideIndex === index ? 'active' : ''}
         />
       ))}
-      {HERO_SLIDES.length > 1 && (
-        <div className="hero-slideshow-dots" aria-label="Hero slide indicators">
-          {HERO_SLIDES.map((_, dotIndex) => (
-            <button
-              key={dotIndex}
-              type="button"
-              className={`hero-slideshow-dot ${dotIndex === index ? 'active' : ''}`}
-              onClick={() => setIndex(dotIndex)}
-              aria-label={`Show vehicle ${dotIndex + 1}`}
-            />
-          ))}
-        </div>
-      )}
+      <div className="hero-slide-indicators" role="tablist" aria-label="Slideshow controls">
+        {HERO_SLIDES.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            role="tab"
+            aria-selected={i === index}
+            className={`hero-slide-indicator ${i === index ? 'active' : ''}`}
+            onClick={() => setIndex(i)}
+            aria-label={`Slide ${i + 1} of ${HERO_SLIDES.length}`}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 
 function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void }) {
-  const featured = useMemo(() => {
-    const available = vehicles.filter((vehicle) => vehicle.status === 'available');
-    const tagged = available.filter(
-      (vehicle) => Boolean(vehicle.featured) || vehicle.tags?.includes('featured') || vehicle.tags?.includes('new_arrival')
-    );
-    if (tagged.length > 0) return tagged.slice(0, 6);
-    if (available.length > 0) return available.slice(0, 6);
-    return vehicles.slice(0, 6);
-  }, [vehicles]);
+  const featured = vehicles.filter((vehicle) => vehicle.status === 'available' && (vehicle.featured || vehicle.tags.includes('featured') || vehicle.tags.includes('new_arrival'))).slice(0, 3);
   const [testimonial, setTestimonial] = useState(0);
   const testimonials = [
     { name: 'S Alladi', quote: 'Amazing and genuine people. I purchased a car as a gift for my daughter. Great service, very professional and efficient. Highly recommended. Daughter loves the car — good price, clean compared to other dealers. Staff also friendly and helpful. Thank you.' },
@@ -418,7 +411,7 @@ function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; 
           <div className="hero-actions">
             <Link href="/inventory" className="button button-primary" data-testid="link-hero-inventory">Browse available stock <ArrowRight size={16} /></Link>
             <a href={`tel:${PHONE_TEL}`} className="button button-dark" data-testid="link-hero-call"><Phone size={16} /> Call {PHONE_DISPLAY}</a>
-            <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer" className="button button-hero-whatsapp" data-testid="link-hero-whatsapp"><MessageCircle size={16} /> WhatsApp</a>
+            <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer" className="button button-whatsapp" data-testid="link-hero-whatsapp"><MessageCircle size={16} /> WhatsApp</a>
           </div>
           <div className="hero-note"><strong>01</strong><span>New arrivals checked<br />every weekday</span></div>
         </div>
@@ -447,7 +440,7 @@ function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; 
           <div className="reasons">
             <div className="reason"><div className="reason-number">01</div><div><h3>Extensive, carefully chosen stock</h3><p>A wide range of vehicles for every need and budget — each one inspected to our standards.</p></div><ChevronRight size={18} /></div>
             <div className="reason"><div className="reason-number">02</div><div><h3>Competitive pricing</h3><p>No hidden fees. Clear numbers, exclusive offers, and part-exchange welcome.</p></div><ChevronRight size={18} /></div>
-            <div className="reason"><div className="reason-number">03</div><div><h3>Customer-centric service</h3><p>Friendly staff ready to assist every step of the way — Auto Trader Highly Rated 2018–2021.</p></div><ChevronRight size={18} /></div>
+            <div className="reason"><div className="reason-number">03</div><div><h3>Customer-centric service</h3><p>Friendly staff ready to assist every step of the way — Auto Trader Highly Rated 2018 till now.</p></div><ChevronRight size={18} /></div>
           </div>
         </div>
       </section>
@@ -476,7 +469,7 @@ function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; 
         </blockquote>
       </section>
       <div className="awards">
-        <div className="award"><div className="award-mark">AT</div><div><b>Auto Trader Highly Rated</b><span>Customer service 2018–2021</span></div></div>
+        <div className="award"><div className="award-mark">AT</div><div><b>Auto Trader Highly Rated</b><span>Customer service 2018 till now</span></div></div>
         <div className="award"><div className="award-mark">12</div><div><b>Years in the trade</b><span>Local, established, accountable</span></div></div>
         <div className="award"><div className="award-mark"><ShieldCheck size={15} /></div><div><b>Prepared properly</b><span>Every car gets our standard</span></div></div>
       </div>
@@ -567,27 +560,19 @@ function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicl
   const nextPhoto = (direction: number) => setPhoto((current) => (current + direction + images.length) % images.length);
   const video = getVideoEmbed(vehicle.videoUrl);
   const similar = vehicles.filter((item) => item.status === 'available' && item.id !== vehicle.id && (item.bodyType === vehicle.bodyType || item.make === vehicle.make)).slice(0, 3);
-  const engineVal = vehicle.engineSize
-    ? (vehicle.engineSize.toLowerCase().includes('l') ? vehicle.engineSize : `${vehicle.engineSize}L`)
-    : (vehicle.specs?.find((s) => s.label.toLowerCase().includes('engine'))?.value || '—');
-
-  const standardSpecs = [
+  const overview = [
     { label: 'Make / model', value: `${vehicle.make} ${vehicle.model}` },
     { label: 'Variant', value: vehicle.variant },
-    { label: 'Registered', value: vehicle.registrationDate || (vehicle.year ? String(vehicle.year) : '—') },
-    { label: 'Plate', value: vehicle.registrationPlate || '—' },
-    { label: 'Engine', value: engineVal },
-    { label: 'Fuel / gearbox', value: `${vehicle.fuel} · ${vehicle.transmission}` },
-    { label: 'Colour', value: vehicle.colour },
-    { label: 'Doors', value: vehicle.doors != null ? String(vehicle.doors) : '—' },
     { label: 'Condition', value: vehicle.condition },
+    { label: 'Colour', value: vehicle.colour },
+    { label: 'Fuel / gearbox', value: `${vehicle.fuel} · ${vehicle.transmission}` },
+    { label: 'Doors', value: vehicle.doors != null ? String(vehicle.doors) : '—' },
+    { label: 'Engine size', value: vehicle.engineSize || '—' },
+    { label: 'Registered', value: vehicle.registrationDate || '—' },
+    { label: 'Plate', value: vehicle.registrationPlate || '—' },
     { label: 'Location', value: vehicle.location },
+    ...vehicle.specs,
   ];
-  const standardLabels = new Set(
-    standardSpecs.map((s) => s.label.toLowerCase()).concat(['engine size', 'door', 'doors', 'color', 'colour', 'make', 'model'])
-  );
-  const extraSpecs = (vehicle.specs || []).filter((s) => !standardLabels.has(s.label.toLowerCase()));
-  const overview = [...standardSpecs, ...extraSpecs];
 
   return (
     <div className="detail-page">
@@ -618,14 +603,7 @@ function VehicleDetail({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicl
           <div className="detail-actions">
             <a className="button button-dark" href={`tel:${PHONE_TEL}`}><Phone size={16} /> Call dealership</a>
             <a className="button button-whatsapp" href={whatsAppUrl([vehicle])} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Enquire about this car</a>
-            <button
-              className={`button ${savedIds.includes(vehicle.id) ? 'button-primary' : 'button-shortlist'}`}
-              onClick={() => onToggleSaved(vehicle.id)}
-              data-testid="button-detail-shortlist"
-            >
-              <Heart size={16} fill={savedIds.includes(vehicle.id) ? 'currentColor' : 'none'} />
-              {savedIds.includes(vehicle.id) ? 'Saved to shortlist' : 'Save to shortlist'}
-            </button>
+            <button className={`button ${savedIds.includes(vehicle.id) ? 'button-primary' : 'button-outline'}`} onClick={() => onToggleSaved(vehicle.id)}><Heart size={16} fill={savedIds.includes(vehicle.id) ? 'currentColor' : 'none'} /> {savedIds.includes(vehicle.id) ? 'Saved to shortlist' : 'Save to shortlist'}</button>
           </div>
         </div>
       </section>
