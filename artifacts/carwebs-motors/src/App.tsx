@@ -394,14 +394,14 @@ function HeroSlideshow() {
 }
 
 function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void }) {
-  const source = vehicles && vehicles.length > 0 ? vehicles : (sampleVehicles as Vehicle[]);
-  const available = source.filter((vehicle) => vehicle.status === 'available');
-  const basePool = available.length > 0 ? available : source;
-  const pool = basePool.length >= 3
-    ? basePool
-    : [...basePool, ...(sampleVehicles as Vehicle[]).filter((sv) => !basePool.some((b) => b.id === sv.id))];
-  const tagged = pool.filter((vehicle) => vehicle.featured || vehicle.tags?.includes('featured') || vehicle.tags?.includes('new_arrival'));
-  const featured = (tagged.length >= 3 ? tagged : pool).slice(0, 6);
+  // Only show this specific car card (Vauxhall Astra) on the home page, removing all others
+  const vauxhallCar = vehicles.find(
+    (v) =>
+      v.id === 'cw-vauxhall-astra-1-6-16v-e-a55d' ||
+      v.make.toLowerCase().includes('vauxhall') ||
+      v.model.toLowerCase().includes('astra')
+  );
+  const featured = vauxhallCar ? [vauxhallCar] : vehicles.filter((v) => v.status === 'available').slice(0, 1);
   const [testimonial, setTestimonial] = useState(0);
   const testimonials = [
     { name: 'S Alladi', quote: 'Amazing and genuine people. I purchased a car as a gift for my daughter. Great service, very professional and efficient. Highly recommended. Daughter loves the car — good price, clean compared to other dealers. Staff also friendly and helpful. Thank you.' },

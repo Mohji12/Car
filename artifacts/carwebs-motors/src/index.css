@@ -222,7 +222,7 @@ main { min-width: 0; }
 .build-strip b { display: block; font-size: 21px; letter-spacing: -.05em; }
 .build-strip span { display: block; margin-top: 7px; font-family: var(--app-font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; opacity: .72; }
 .home-section { padding: 86px clamp(18px, 4vw, 64px); max-width: 1400px; margin: auto; }
-.featured-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.featured-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 420px)); gap: 20px; }
 .vehicle-card { background: #fbf9f4; border: 1px solid #ddd9d0; position: relative; min-width: 0; transition: transform .2s ease, box-shadow .2s ease; display: flex; flex-direction: column; height: 100%; }
 .vehicle-card:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(38,40,46,.1); }
 .vehicle-image { aspect-ratio: 16 / 10; width: 100%; position: relative; overflow: hidden; background: #d8d9d8; flex: 0 0 auto; }
