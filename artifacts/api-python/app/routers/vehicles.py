@@ -114,9 +114,11 @@ async def delete_vehicle_route(vehicle_id: str) -> Response:
 )
 async def upload_vehicle_images(
     vehicle_id: str,
-    files: list[UploadFile] | None = File(None),
+    files: list[UploadFile] = File(...),
 ) -> Vehicle:
-    uploaded = files or []
+    # FastAPI may pass a single UploadFile when only one part is sent.
+    uploaded = files if isinstance(files, list) else [files]
+    uploaded = [f for f in uploaded if f is not None]
     if not uploaded:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -125,23 +127,54 @@ async def upload_vehicle_images(
     if len(uploaded) > MAX_FILES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": f"Maximum {MAX_FILES} files allowed"},
+            detail={"message": f"Maximum {MAX_FILES} files allowed per request"},
         )
+
+    existing = await get_vehicle(vehicle_id, increment_view=False)
+    if existing is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": "Vehicle not found"},
+        )
+    remaining = max(0, MAX_FILES - len(existing.images or []))
+    if remaining == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": f"This vehicle already has {MAX_FILES} images"},
+        )
+    uploaded = uploaded[:remaining]
 
     urls: list[str] = []
     try:
         for file in uploaded:
             content = await file.read()
+            if not content:
+                continue
             if len(content) > MAX_FILE_SIZE:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={"message": "File exceeds 8MB limit"},
+                    detail={
+                        "message": f"File exceeds 8MB limit: {file.filename or 'image'}"
+                    },
+                )
+            content_type = file.content_type or ""
+            # Some browsers send empty or octet-stream MIME for camera photos.
+            if (
+                content_type
+                and not content_type.startswith("image/")
+                and content_type not in {"application/octet-stream", "binary/octet-stream"}
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "message": f"Not an image file: {file.filename or content_type}"
+                    },
                 )
             url = await asyncio.to_thread(
                 upload_bytes,
                 content,
                 original_filename=file.filename,
-                content_type=file.content_type,
+                content_type=content_type if content_type.startswith("image/") else "image/jpeg",
                 prefix=f"vehicles/{vehicle_id}",
             )
             urls.append(url)
@@ -150,6 +183,12 @@ async def upload_vehicle_images(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail={"message": f"S3 upload failed: {exc}"},
         ) from exc
+
+    if not urls:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": "No valid image files uploaded"},
+        )
 
     vehicle = await append_images(vehicle_id, urls)
     if vehicle is None:

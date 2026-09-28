@@ -394,14 +394,15 @@ function HeroSlideshow() {
 }
 
 function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void }) {
-  // Only show this specific car card (Vauxhall Astra) on the home page, removing all others
-  const vauxhallCar = vehicles.find(
-    (v) =>
-      v.id === 'cw-vauxhall-astra-1-6-16v-e-a55d' ||
-      v.make.toLowerCase().includes('vauxhall') ||
-      v.model.toLowerCase().includes('astra')
-  );
-  const featured = vauxhallCar ? [vauxhallCar] : vehicles.filter((v) => v.status === 'available').slice(0, 1);
+  const available = vehicles.filter((v) => v.status === 'available');
+  const featuredTagged = available.filter((v) => v.featured || v.tags.includes('featured'));
+  const featured =
+    featuredTagged.length >= 3
+      ? featuredTagged.slice(0, 3)
+      : [
+          ...featuredTagged,
+          ...available.filter((v) => !featuredTagged.some((f) => f.id === v.id)),
+        ].slice(0, 3);
   const [testimonial, setTestimonial] = useState(0);
   const testimonials = [
     { name: 'S Alladi', quote: 'Amazing and genuine people. I purchased a car as a gift for my daughter. Great service, very professional and efficient. Highly recommended. Daughter loves the car — good price, clean compared to other dealers. Staff also friendly and helpful. Thank you.' },
@@ -1209,6 +1210,10 @@ function AdminPage() {
   };
 
   const MAX_IMAGES = 12;
+  const IMAGE_EXT = /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif)$/i;
+
+  const isImageFile = (file: File) =>
+    (file.type ? file.type.startsWith('image/') : false) || IMAGE_EXT.test(file.name);
 
   const uploadImages = async (files: FileList | File[] | null) => {
     if (!editingId) {
@@ -1220,33 +1225,59 @@ function AdminPage() {
       setFormMessage(`This car already has ${MAX_IMAGES} images. Remove some to add more.`);
       return;
     }
-    const selected = Array.from(files || []).filter((file) => file.type.startsWith('image/'));
+    const selected = Array.from(files || []).filter(isImageFile);
     if (!selected.length) {
-      setFormMessage('No image files selected. Choose JPG, PNG, or WebP photos.');
+      setFormMessage('No image files selected. Choose JPG, PNG, WebP, or similar photos.');
       return;
     }
     const batch = selected.slice(0, remaining);
     const skipped = selected.length - batch.length;
     setUploading(true);
-    setFormMessage(`Uploading ${batch.length} image${batch.length === 1 ? '' : 's'}…`);
+    let uploadedCount = 0;
+    let lastImages = form.images || [];
+    let lastError = '';
+
     try {
-      const body = new FormData();
-      batch.forEach((file) => body.append('files', file));
-      const response = await fetch(apiUrl(`/api/vehicles/${editingId}/images`), {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${getAdminToken()}` },
-        body,
-      });
-      const payload = await response.json().catch(() => ({})) as Vehicle & { message?: string };
-      if (!response.ok) throw new Error(payload.message || 'Upload failed');
-      setForm((current) => ({ ...current, images: payload.images }));
-      setFormMessage(
-        skipped > 0
-          ? `Uploaded ${batch.length} image${batch.length === 1 ? '' : 's'}. ${skipped} skipped (max ${MAX_IMAGES}).`
-          : `Images uploaded (${payload.images?.length ?? 0} total).`,
-      );      await invalidate();
+      // Upload one file per request so large multi-select batches are not blocked
+      // by proxy body-size limits / timeouts that reject a single big multipart POST.
+      for (let i = 0; i < batch.length; i += 1) {
+        const file = batch[i];
+        setFormMessage(`Uploading image ${i + 1} of ${batch.length}…`);
+        const body = new FormData();
+        body.append('files', file);
+        const response = await fetch(apiUrl(`/api/vehicles/${editingId}/images`), {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${getAdminToken()}` },
+          body,
+        });
+        const payload = await response.json().catch(() => ({})) as Vehicle & { message?: string };
+        if (!response.ok) {
+          lastError = payload.message || `Upload failed on image ${i + 1} (${file.name})`;
+          break;
+        }
+        uploadedCount += 1;
+        lastImages = payload.images || lastImages;
+        setForm((current) => ({ ...current, images: payload.images }));
+      }
+
+      if (uploadedCount > 0) {
+        const parts = [
+          `Uploaded ${uploadedCount} image${uploadedCount === 1 ? '' : 's'} (${lastImages.length} total).`,
+        ];
+        if (skipped > 0) parts.push(`${skipped} skipped (max ${MAX_IMAGES}).`);
+        if (lastError) parts.push(`Stopped early: ${lastError}`);
+        setFormMessage(parts.join(' '));
+        await invalidate();
+      } else {
+        setFormMessage(lastError || 'Image upload failed.');
+      }
     } catch (error) {
-      setFormMessage(error instanceof Error ? error.message : 'Image upload failed.');
+      setFormMessage(
+        uploadedCount > 0
+          ? `Uploaded ${uploadedCount} image${uploadedCount === 1 ? '' : 's'}, then failed: ${error instanceof Error ? error.message : 'Upload error'}`
+          : error instanceof Error ? error.message : 'Image upload failed.',
+      );
+      if (uploadedCount > 0) await invalidate();
     } finally {
       setUploading(false);
     }
