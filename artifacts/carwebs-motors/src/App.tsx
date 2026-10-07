@@ -54,10 +54,10 @@ import { sampleVehicles } from '@/data/sample-vehicles';
 import { apiUrl } from '@/lib/api';
 import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
 
-const WHATSAPP = '447533335233';
-const WHATSAPP_DISPLAY = '+44 7533 335233';
-const PHONE_DISPLAY = '+44 7533 335233';
-const PHONE_TEL = '+447533335233';
+const WHATSAPP = '447491919899';
+const WHATSAPP_DISPLAY = '7491919899';
+const PHONE_DISPLAY = '7491919899';
+const PHONE_TEL = '+447491919899';
 const EMAIL = 'info@carwebs.co.uk';
 const ADMIN_TOKEN_KEY = 'carwebs-admin-token';
 
@@ -441,8 +441,8 @@ function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; 
       <section className="home-section" style={{ paddingTop: 28 }}>
         <div className="why-grid">
           <div className="why-intro">
-            <div className="eyebrow">Why CarWebs</div>
-            <h2>Less forecourt.<br />More confidence.</h2>
+            <div className="why-label">Why CarWebs</div>
+            <h2>Drive away with confident</h2>
             <p>Welcome to CarWebs, your trusted destination for quality used vehicles. We take pride in transparency, thorough inspections, and building long-term relationships.</p>
           </div>
           <div className="reasons">

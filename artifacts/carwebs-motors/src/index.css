@@ -279,12 +279,22 @@ main { min-width: 0; }
 .vehicle-body { padding: 17px; }
 .vehicle-body h3 { margin: 0; font-size: 19px; letter-spacing: -.05em; }
 .vehicle-body h3 span { font-weight: 400; }
-.vehicle-meta { display: flex; gap: 9px; flex-wrap: wrap; color: #69717b; font-family: var(--app-font-mono); font-size: 9px; margin-top: 9px; }
+.vehicle-meta { display: flex; gap: 9px; flex-wrap: wrap; color: #3d444d; font-family: var(--app-font-mono); font-size: 13px; font-weight: 700; margin-top: 9px; }
 .vehicle-meta span:not(:last-child):after { content: '·'; padding-left: 9px; color: #c0c1be; }
 .vehicle-price { display: flex; align-items: end; justify-content: space-between; margin-top: 18px; }
 .vehicle-price strong { font-size: 22px; letter-spacing: -.055em; }
 .vehicle-price small { color: #68707d; font-size: 10px; }
 .why-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: 80px; align-items: start; }
+.why-intro .why-label {
+  display: inline-block;
+  font-family: var(--app-font-display, var(--app-font));
+  font-size: clamp(28px, 4.2vw, 44px);
+  font-weight: 800;
+  color: #1a1c1f;
+  letter-spacing: -.04em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
 .why-intro h2 { font-size: clamp(30px, 4vw, 53px); line-height: .95; letter-spacing: -.07em; margin: 8px 0 22px; }
 .why-intro p { font-size: 14px; line-height: 1.7; color: #666e77; max-width: 320px; }
 .reasons { border-top: 1px solid #cbc9c2; }
