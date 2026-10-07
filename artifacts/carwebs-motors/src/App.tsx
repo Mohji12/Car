@@ -7,6 +7,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -55,8 +56,8 @@ import { apiUrl } from '@/lib/api';
 import { Link, Route, Switch, useLocation, useParams, Router as WouterRouter } from 'wouter';
 
 const WHATSAPP = '447491919899';
-const WHATSAPP_DISPLAY = '7491919899';
-const PHONE_DISPLAY = '7491919899';
+const WHATSAPP_DISPLAY = '+44 7491 919899';
+const PHONE_DISPLAY = '+44 7491 919899';
 const PHONE_TEL = '+447491919899';
 const EMAIL = 'info@carwebs.co.uk';
 const ADMIN_TOKEN_KEY = 'carwebs-admin-token';
@@ -192,22 +193,52 @@ function buildCardMedia(vehicle: Vehicle): CardMedia[] {
   ];
 }
 
-function VehicleCard({ vehicle, saved, onToggleSaved, compact = false }: { vehicle: Vehicle; saved: boolean; onToggleSaved: (id: string) => void; compact?: boolean }) {
+function VehicleCard({
+  vehicle,
+  saved,
+  onToggleSaved,
+  compact = false,
+  onGalleryCycleComplete,
+}: {
+  vehicle: Vehicle;
+  saved: boolean;
+  onToggleSaved: (id: string) => void;
+  compact?: boolean;
+  onGalleryCycleComplete?: (vehicleId: string) => void;
+}) {
   const [offset, setOffset] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [swiped, setSwiped] = useState(false);
   const [mediaIndex, setMediaIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const media = useMemo(() => buildCardMedia(vehicle), [vehicle]);
+  const onGalleryCompleteRef = useRef(onGalleryCycleComplete);
+  onGalleryCompleteRef.current = onGalleryCycleComplete;
 
   useEffect(() => {
     setMediaIndex(0);
   }, [vehicle.id]);
 
   useEffect(() => {
-    if (media.length <= 1 || paused) return;
+    if (paused) return;
+
+    // Single image/video: still rotate the home shortlist after a beat.
+    if (media.length <= 1) {
+      if (!onGalleryCompleteRef.current) return;
+      const timer = window.setTimeout(() => {
+        onGalleryCompleteRef.current?.(vehicle.id);
+      }, 4200);
+      return () => window.clearTimeout(timer);
+    }
+
     const timer = window.setInterval(() => {
-      setMediaIndex((current) => (current + 1) % media.length);
+      setMediaIndex((current) => {
+        if (current >= media.length - 1) {
+          window.setTimeout(() => onGalleryCompleteRef.current?.(vehicle.id), 0);
+          return 0;
+        }
+        return current + 1;
+      });
     }, 2800);
     return () => window.clearInterval(timer);
   }, [media.length, paused, vehicle.id]);
@@ -393,21 +424,62 @@ function HeroSlideshow() {
   );
 }
 
-function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void }) {
-  const available = vehicles.filter((v) => v.status === 'available');
+function pickInitialFeaturedIds(available: Vehicle[]): string[] {
   const featuredTagged = available.filter((v) => v.featured || v.tags.includes('featured'));
-  const featured =
+  const ordered =
     featuredTagged.length >= 3
-      ? featuredTagged.slice(0, 3)
+      ? featuredTagged
       : [
           ...featuredTagged,
           ...available.filter((v) => !featuredTagged.some((f) => f.id === v.id)),
-        ].slice(0, 3);
+        ];
+  return ordered.slice(0, 3).map((v) => v.id);
+}
+
+function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; savedIds: string[]; onToggleSaved: (id: string) => void }) {
+  const available = useMemo(
+    () => vehicles.filter((v) => v.status === 'available'),
+    [vehicles],
+  );
+  const [featuredIds, setFeaturedIds] = useState<string[]>([]);
   const [testimonial, setTestimonial] = useState(0);
   const testimonials = [
     { name: 'S Alladi', quote: 'Amazing and genuine people. I purchased a car as a gift for my daughter. Great service, very professional and efficient. Highly recommended. Daughter loves the car — good price, clean compared to other dealers. Staff also friendly and helpful. Thank you.' },
     { name: 'Carly A', quote: 'Very recommended place. Good service — the gentleman that provides service was very friendly and helpful, did show us a few cars and was patient.' },
   ];
+
+  useEffect(() => {
+    setFeaturedIds((current) => {
+      const valid = current.filter((id) => available.some((v) => v.id === id));
+      if (valid.length >= Math.min(3, available.length) && valid.length > 0) {
+        return valid.slice(0, 3);
+      }
+      return pickInitialFeaturedIds(available);
+    });
+  }, [available]);
+
+  const featured = featuredIds
+    .map((id) => available.find((v) => v.id === id))
+    .filter((v): v is Vehicle => Boolean(v));
+
+  const replaceFeaturedCard = (vehicleId: string) => {
+    setFeaturedIds((current) => {
+      const idx = current.indexOf(vehicleId);
+      if (idx === -1) return current;
+      const unused = available.filter((v) => !current.includes(v.id));
+      if (unused.length) {
+        const next = unused[Math.floor(Math.random() * unused.length)];
+        const nextIds = [...current];
+        nextIds[idx] = next.id;
+        return nextIds;
+      }
+      // Not enough stock to swap in a new car — rotate the shortlist order.
+      if (current.length < 2) return current;
+      const rotated = [...current];
+      rotated.push(rotated.splice(idx, 1)[0]);
+      return rotated;
+    });
+  };
 
   return (
     <>
@@ -436,7 +508,22 @@ function HomePage({ vehicles, savedIds, onToggleSaved }: { vehicles: Vehicle[]; 
           <div><div className="eyebrow">The short list</div><h2>Worth a closer look.</h2></div>
           <Link href="/inventory" className="section-link" data-testid="link-featured-view-all">View all available stock <ArrowRight size={14} /></Link>
         </div>
-        <div className="featured-grid">{featured.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} saved={savedIds.includes(vehicle.id)} onToggleSaved={onToggleSaved} />)}</div>
+        <div className="featured-grid">
+          {featured.map((vehicle) => (
+            <VehicleCard
+              key={vehicle.id}
+              vehicle={vehicle}
+              saved={savedIds.includes(vehicle.id)}
+              onToggleSaved={onToggleSaved}
+              onGalleryCycleComplete={replaceFeaturedCard}
+            />
+          ))}
+        </div>
+        <div className="featured-more">
+          <Link href="/inventory" className="button button-dark" data-testid="link-featured-show-more">
+            Show more <ArrowRight size={16} />
+          </Link>
+        </div>
       </section>
       <section className="home-section" style={{ paddingTop: 28 }}>
         <div className="why-grid">
